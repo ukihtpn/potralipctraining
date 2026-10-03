@@ -2344,17 +2344,27 @@ function tanpaRujukan(){
   if (document.querySelector('meta[name=referrer]')) return;
   const m = document.createElement('meta'); m.name = 'referrer'; m.content = 'no-referrer'; document.head.appendChild(m);
 }
-function bacaGoogle(teks){
+function bacaGoogle(teks, gagal){
   tanpaRujukan();
-  TTS.giliran = potongTeks(teks, 180);
+  TTS.giliran = potongTeks(teks, 180); let pertama = true;
+  const rosak = () => { if (pertama && gagal && TTS.aktif){ TTS.gagalGoogle = true; gagal(); } else { hentiBaca(); if (pertama) toast('Bacaan soalan gagal. Pastikan internet ada dan buka portal dalam Chrome/Safari.'); } };
   const seterus = () => {
     if (!TTS.aktif || !TTS.giliran.length){ hentiBaca(); return; }
     const a = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ms&q=' + encodeURIComponent(TTS.giliran.shift()));
     a.volume = Math.max(0.3, SND.vol ?? 0.8); TTS.audio = a;
-    a.onended = seterus; a.onerror = () => { hentiBaca(); toast('Bacaan soalan gagal. Pastikan internet ada dan buka portal dalam Chrome/Safari (bukan dalam app lain).'); };
-    const pr = a.play(); if (pr && pr.catch) pr.catch(() => { hentiBaca(); });
+    a.onplaying = () => { pertama = false; };
+    a.onended = seterus; a.onerror = rosak;
+    const pr = a.play(); if (pr && pr.catch) pr.catch(rosak);
   };
   seterus();
+}
+function bacaPeranti(teks){
+  const u = new SpeechSynthesisUtterance(teks);
+  if (TTS.suara){ u.voice = TTS.suara; u.lang = TTS.suara.lang; } else u.lang = 'ms-MY';
+  u.rate = 0.95; u.volume = Math.max(0.3, SND.vol ?? 0.8);
+  u.onend = () => { if (TTS.aktif) hentiBaca(); };
+  u.onerror = () => hentiBaca();
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 function bacaSoalan(){
   if (TTS.aktif){ hentiBaca(); return; }
@@ -2362,15 +2372,12 @@ function bacaSoalan(){
   const teks = teksSoalan(q);
   TTS.aktif = true; butangTts(true); laguPerlahan(true);
   TTS.suara = TTS.suara || pilihSuara();
-  if (adaSS() && !TTS.gagalSS){
-    const u = new SpeechSynthesisUtterance(teks);
-    if (TTS.suara){ u.voice = TTS.suara; u.lang = TTS.suara.lang; } else u.lang = 'ms-MY'; u.rate = 0.95; u.volume = Math.max(0.3, SND.vol ?? 0.8);
-    let mula = false; u.onstart = () => { mula = true; };
-    u.onend = () => { if (TTS.aktif) hentiBaca(); };
-    u.onerror = () => { if (!mula && TTS.aktif){ TTS.gagalSS = true; bacaGoogle(teks); } else hentiBaca(); };
-    speechSynthesis.cancel(); speechSynthesis.speak(u);
-    setTimeout(() => { if (TTS.aktif && !mula && !speechSynthesis.speaking){ speechSynthesis.cancel(); TTS.gagalSS = true; bacaGoogle(teks); } }, 2500);
-  } else bacaGoogle(teks);
+  const melayuPeranti = TTS.suara && /^ms/i.test(TTS.suara.lang);
+  // Utamakan suara Bahasa Melayu: (1) suara Melayu dalam telefon, (2) suara Melayu Google, (3) suara telefon lain (cth Indonesia)
+  if (adaSS() && melayuPeranti) bacaPeranti(teks);
+  else if (!TTS.gagalGoogle) bacaGoogle(teks, adaSS() ? () => bacaPeranti(teks) : null);
+  else if (adaSS()) bacaPeranti(teks);
+  else { hentiBaca(); toast('Peranti ini tidak menyokong bacaan soalan.'); }
 }
 $('swTts').onclick = () => { TTS.auto = !TTS.auto; try { localStorage.setItem('ipcTtsAuto2', TTS.auto ? '1' : '0'); } catch(e){} $('swTts').setAttribute('aria-checked', TTS.auto); if (TTS.auto && !GM.semak && !TTS.aktif) bacaSoalan(); else if (!TTS.auto) hentiBaca(); };
 $('swTts').setAttribute('aria-checked', TTS.auto);
