@@ -1794,7 +1794,21 @@ $('btnLogin').addEventListener('click', async () => {
   const nama = $('inNama').value.trim().toUpperCase(), ic4 = $('inIc4').value.trim();
   if (!nama) return msg('loginMsg', 'Sila isi nama penuh.', 'err');
   if (!/^\d{4}$/.test(ic4)) return msg('loginMsg', 'Masukkan tepat 4 digit akhir No. K/P.', 'err');
-  const b = $('btnLogin'); busy(b, true, 'Menyemak rekod…'); msg('loginMsg', '');
+  const b = $('btnLogin'); msg('loginMsg', '');
+  const kunciP = 'ipcProf_' + nama.replace(/[^A-Z]/g, '') + '_' + ic4;
+  let simpan = null; try { simpan = JSON.parse(ls(kunciP) || 'null'); } catch(e){}
+  if (simpan && simpan.id){
+    // Log masuk segera guna profil tersimpan; pelayan disemak di belakang dan data dikemas kini
+    masukDashboard(simpan, false);
+    apiPost({ type:'login', nama, ic4, kategori: STATE.kat, status: STATE.status }).then(d => {
+      if (!STATE.profil || STATE.profil.id !== simpan.id) return;
+      if (!d.ok){ ls(kunciP, null); logout(); msg('loginMsg', esc(d.error || 'Sila log masuk semula.'), 'err'); return; }
+      ls(kunciP, JSON.stringify(d.profil)); ls('ipcLastNama', d.profil.nama);
+      const th = STATE.thumbs; Object.assign(STATE.profil, d.profil); STATE.thumbs = th; renderDashboard();
+    }).catch(() => {});
+    return;
+  }
+  busy(b, true, 'Menyemak rekod…');
   try {
     const d = await apiPost({ type:'login', nama, ic4, kategori: STATE.kat, status: STATE.status });
     if (!d.ok){
@@ -1805,7 +1819,7 @@ $('btnLogin').addEventListener('click', async () => {
       } else msg('loginMsg', esc(d.error), 'err');
       return;
     }
-    ls('ipcLastNama', d.profil.nama);
+    ls('ipcLastNama', d.profil.nama); ls(kunciP, JSON.stringify(d.profil));
     masukDashboard(d.profil, d.tuntutBaru);
   } catch(err){ msg('loginMsg', '⚠ Tidak dapat sambung ke pelayan. Cuba lagi sebentar.<br><small style="opacity:.7">(' + esc(String(err && err.message || err)) + ')</small>', 'err'); }
   finally { busy(b, false); }
@@ -1980,6 +1994,7 @@ async function tetapKat(k){
 }
 
 function logout(){
+  try { const p = STATE.profil; if (p && p.id){ Object.keys(localStorage).filter(k => k.startsWith('ipcProf_')).forEach(k => { try { if (JSON.parse(localStorage.getItem(k)).id === p.id) localStorage.setItem(k, JSON.stringify(p)); } catch(e){} }); } } catch(e){}
   $('mpPop').classList.add('hidden'); if (!$('laguGo').paused) setLagu(false); setTimeout(syncLatar, 0);
   STATE.profil = null; STATE.thumbs = {}; ls('ipcCurrentStaffId', null); document.body.classList.remove('staff-mode');
   $('inIc4').value = ''; $('app').classList.add('hidden');
@@ -2668,7 +2683,8 @@ const thumbUrl = it => it.thumb || (it.fileId ? `https://drive.google.com/thumbn
 function muatRujukan(force){
   if (REF.items && !force) return Promise.resolve(REF.items);
   if (REF.loading && !force) return REF.loading;
-  REF.loading = apiGet({ type:'rujukan' }).then(d => { REF.items = d.items || []; REF.folder = d.folderSlaid || ''; renderRefCards(); return REF.items; }).catch(() => { REF.items = REF.items || []; return REF.items; });
+  if (!REF.items){ try { const r0 = JSON.parse(ls('ipcRujukan') || 'null'); if (r0){ REF.items = r0.items; REF.folder = r0.folder; setTimeout(renderRefCards, 0); } } catch(e){} }
+  REF.loading = apiGet({ type:'rujukan' }).then(d => { REF.items = d.items || []; REF.folder = d.folderSlaid || ''; try { ls('ipcRujukan', JSON.stringify({ items: REF.items.map(x => Object.assign({}, x, { thumb: /^data:/.test(x.thumb || '') && x.thumb.length > 60000 ? '' : x.thumb })), folder: REF.folder })); } catch(e){} renderRefCards(); if (!$('v-rujukan').classList.contains('hidden')) renderRujukan(); return REF.items; }).catch(() => { REF.items = REF.items || []; return REF.items; });
   return REF.loading;
 }
 function renderRefCards(){
@@ -3143,7 +3159,7 @@ function renderSqList(){
   $('sqInfo').textContent = `${SQ.items.length} soalan · ${aktif} aktif`;
   $('sqList').innerHTML = SQ.items.length ? SQ.items.map((q, i) => `<div class="sq-item ${q.aktif ? '' : 'off'}">
       <span class="sq-no">${i + 1}</span>
-      <div class="sq-txt"><b title="${esc(q.soalan)}">${esc(q.soalan)}</b><div class="sq-tags"><span class="t-${q.jenis}">${JENIS_LABEL[q.jenis] || q.jenis}</span>${q.mediaJenis && q.mediaJenis !== 'Tiada' ? `<span class="t-media">${q.mediaJenis === 'Video' ? '▶ Video' : '🖼️ Gambar'}</span>` : ''}${q.senario ? '<span>Senario</span>' : ''}${q.aktif ? '' : '<span>Tidak aktif</span>'}</div></div>
+      <div class="sq-txt"><b title="${esc(q.soalan)}">${esc(q.soalan)}</b><div class="sq-tags"><span class="t-${q.jenis}">${JENIS_LABEL[q.jenis] || q.jenis}</span>${q.mediaJenis && q.mediaJenis !== 'Tiada' ? `<span class="t-media">${q.mediaJenis === 'Video' ? '▶ Video' : '🖼️ Gambar'}</span>` : ''}${q.senario ? '<span>Senario</span>' : ''}${q.aktif ? '' : '<span>Tidak aktif</span>'}${q._simpan ? '<span style="background:#fff3c4;color:#7a5c00">⏳ Menyimpan…</span>' : ''}</div></div>
       <div class="sq-btns"><button title="Naik" onclick="alihSoalan('${q.id}',-1)" ${i === 0 ? 'disabled' : ''}>↑</button><button title="Turun" onclick="alihSoalan('${q.id}',1)" ${i === SQ.items.length - 1 ? 'disabled' : ''}>↓</button>
         <button title="Edit" onclick="bukaEditor('${q.id}')">✏️</button><button class="del" title="Padam" onclick="padamSoalan('${q.id}', this)">🗑</button></div></div>`).join('')
     : '<p class="muted-note">Belum ada soalan. Tekan "Tambah soalan".</p>';
@@ -3242,14 +3258,29 @@ function pratontonSoalan(){
   mulaGame(q.lencana, [q]);
 }
 $('bEdSave').onclick = async () => {
-  const q = soalanBersih(bacaEditor()); const b = $('bEdSave'); busy(b, true, 'Menyimpan…'); msg('edMsg', '');
+  const q = soalanBersih(bacaEditor()); msg('edMsg', '');
+  if (!String(q.soalan || '').trim()) return msg('edMsg', 'Sila isi soalan.', 'err');
+  // Simpan segera dalam senarai (optimistik); pelayan disimpan di belakang
+  const salinan = JSON.parse(JSON.stringify(SQ.items)), lama = q.id ? SQ.items.findIndex(x => x.id === q.id) : -1;
+  const tmp = Object.assign({}, q, { id: q.id || ('tmp' + Date.now()), _simpan: true });
+  if (lama >= 0) SQ.items[lama] = tmp; else SQ.items.push(tmp);
+  tutupEditor(); renderSqList(); renderSqChips(); toast('⏳ Menyimpan soalan…');
   try {
     const d = await apiPost({ type:'coord_soalan_simpan', pin: STATE.coPin, soalan:q });
-    if (!d.ok){ msg('edMsg', esc(d.error), 'err'); return; }
-    tutupEditor(); GM.cache[q.lencana] = null; toast('✓ Soalan disimpan'); await pilihSqLencana(q.lencana);
-  } catch(e){ msg('edMsg', '⚠ Gagal sambung ke pelayan.', 'err'); }
-  finally { busy(b, false); }
+    if (!d.ok) throw new Error(d.error || 'Gagal disimpan');
+    tmp.id = d.id || tmp.id; delete tmp._simpan; GM.cache[q.lencana] = null; renderSqList(); toast('✓ Soalan disimpan');
+  } catch(e){
+    SQ.items = salinan; renderSqList(); renderSqChips();
+    SQ.ed = q; bukaEditorDari(q); msg('edMsg', '⚠ ' + esc(e.message || 'Gagal sambung ke pelayan.') + ' Soalan belum disimpan — cuba lagi.', 'err');
+  }
 };
+function bukaEditorDari(q){
+  $('edJenis').value = q.jenis; $('edAktif').value = q.aktif ? '1' : '0'; $('edSenario').value = q.senario || ''; $('edSoalan').value = q.soalan || '';
+  $('edMedia').value = q.mediaJenis || 'Tiada'; $('edMediaUrl').value = q.mediaPautan || ''; $('edPenerangan').value = q.penerangan || '';
+  if (!q.pasangan || !q.pasangan.length) q.pasangan = [['',''],['','']];
+  if (!q.pilihan) q.pilihan = ['',''];
+  renderEdMedia(); renderEdJawapan(); $('mSoalan').classList.remove('hidden');
+}
 $('bSqAdd').onclick = () => bukaEditor(null);
 $('bSqPlay').onclick = () => { if (!SQ.items.filter(q => q.aktif).length) return toast('Tiada soalan aktif.');
   document.body.classList.remove('co-mode'); document.body.classList.add('staff-mode'); mulaGame(SQ.key, SQ.items.filter(q => q.aktif)); };
@@ -3547,7 +3578,8 @@ async function coTutup(t, masa, buka, btn){
 
 // ===================== MULA =====================
 (async function init(){
-  try { const c = await apiGet({ type:'config' }); if (c.ok) STATE.config = c; } catch(e){}
+  try { const c0 = JSON.parse(ls('ipcConfig') || 'null'); if (c0 && c0.ok){ STATE.config = c0; renderKursusTicker(); } } catch(e){}
+  try { const c = await apiGet({ type:'config' }); if (c.ok){ STATE.config = c; ls('ipcConfig', JSON.stringify(c)); } } catch(e){}
   const p = (STATE.config && STATE.config.pautan) || {};
   $('lnkEpsaDash').href = p.epsaDashboard || 'https://ipchtpn.github.io/EPSA-IPC-TRAINING-DASHBOARD/';
   muatRujukan(); renderKursusTicker();
