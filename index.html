@@ -528,6 +528,7 @@
   .jom-ic{ width:92px; height:auto; flex:0 0 auto; filter:drop-shadow(0 4px 8px rgba(11,74,143,.2)); animation:maskot 3s ease-in-out infinite; }
   @keyframes maskot{ 0%,100%{ transform:rotate(-3deg); } 50%{ transform:rotate(3deg) translateY(-3px); } }
   @media (prefers-reduced-motion:reduce){ .jom-ic{ animation:none; } }
+  @media (max-width:720px){ .jom{ flex-direction:column; align-items:stretch; } .jom .jom-ic{ align-self:center; width:120px; } .jom .jom-t{ min-width:0; text-align:center; } }
   .jom-t{ flex:1; min-width:200px; display:flex; flex-direction:column; gap:2px; }
   .jom-t b{ font-family:'Baloo 2','Nunito',sans-serif; font-size:18px; color:#0f2f5c; line-height:1.15; }
   .jom-t span{ font-size:13px; color:#5a4410; font-weight:700; line-height:1.45; }
@@ -611,6 +612,10 @@
   @media (max-width:480px){ .ref-grid.g-video{ grid-template-columns:minmax(0,1fr); } }
   .g-video .ref-item{ cursor:pointer; }
   .vid-sheet{ max-width:900px; }
+  #mVideo{ align-items:center; padding:12px; }
+  #mVideo .sheet{ border-radius:20px; max-height:94vh; }
+  #mVideo .yt.tinggi{ aspect-ratio:auto; height:min(70vh,640px); }
+  .sl-tip{ margin:6px 4px 0; font-size:12px; font-weight:700; color:#1576d1; }
   .sl-nav{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 4px; font-size:12.5px; font-weight:800; color:#fff; }
   .ref-card{ display:flex; flex-direction:column; gap:10px; text-align:left; font-family:inherit; cursor:pointer; background:#f3f8fe; border:2px solid #e1edf9; border-radius:16px; padding:12px; transition:transform .1s, box-shadow .15s; }
   .ref-card:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(11,74,143,0.15); }
@@ -703,6 +708,16 @@
   .bj-row.top .r{ background:linear-gradient(135deg,#f6c445,#e0a106); color:#fff; } .bj-row.r2 .r{ background:#c7d2dd; color:#fff; } .bj-row.r3 .r{ background:#d9a26a; color:#fff; }
   .bj-row b{ color:#0f2f5c; } .bj-row small{ color:var(--muted); display:block; font-size:11.5px; }
   .bj-row .v{ text-align:right; font-weight:800; color:#8a6d08; white-space:nowrap; } .bj-row .v small{ color:var(--muted); font-weight:600; }
+  .st-sum{ margin:12px 0 10px; }
+  .ss-h{ font-size:13.5px; color:var(--navy); font-weight:700; margin-bottom:8px; }
+  .ss-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  @media (max-width:640px){ .ss-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .ss{ border-radius:12px; padding:10px 12px; border:1.5px solid; display:flex; flex-direction:column; gap:1px; }
+  .ss b{ font-size:24px; line-height:1.1; font-family:'Baloo 2','Nunito',sans-serif; } .ss span{ font-size:12.5px; font-weight:800; color:#0f2f5c; } .ss small{ font-size:11px; color:var(--muted); }
+  .ss.bad{ background:#fff4f2; border-color:#f5bdb5; } .ss.bad b{ color:#c9302c; }
+  .ss.warn{ background:#fffaf0; border-color:#ffd59a; } .ss.warn b{ color:#c97a0a; }
+  .ss.ok{ background:#f0fbf6; border-color:#9fe0c4; } .ss.ok b{ color:#0b8a63; }
+  .dept-row .pm{ display:flex; gap:8px; font-size:11px; font-weight:800; margin-top:2px; } .dept-row .pm i{ font-style:normal; } .dept-row .pm .x1{ color:var(--teal); } .dept-row .pm .x2{ color:#1faa6e; }
   .ing{ display:flex; gap:12px; align-items:flex-start; border-radius:14px; padding:12px; margin-bottom:10px; border:1.5px solid; }
   .ing:last-child{ margin-bottom:0; }
   .ing .ic{ font-size:24px; line-height:1; flex:0 0 auto; }
@@ -845,6 +860,9 @@
   @keyframes tPulse{ 50%{ box-shadow:0 0 0 4px rgba(229,83,61,.18); } }
   @keyframes tShake{ 25%{ transform:rotate(-12deg);} 75%{ transform:rotate(12deg);} }
   @media (prefers-reduced-motion:reduce){ .g-timer.crit, .g-timer.crit .clk{ animation:none; } }
+  .g-tts{ display:inline-flex; align-items:center; gap:6px; margin:2px 0 12px; border:1.5px solid #c3dcf5; background:#eef6ff; color:#1576d1; font-family:inherit; font-size:13px; font-weight:800; border-radius:20px; padding:6px 14px; cursor:pointer; }
+  .g-tts.on{ background:#1576d1; color:#fff; border-color:#1576d1; animation:ttsP 1.2s ease-in-out infinite; }
+  @keyframes ttsP{ 50%{ box-shadow:0 0 0 5px rgba(21,118,209,.18); } }
   .g-stat{ margin-left:auto; display:flex; align-items:center; gap:8px; }
   .g-lives{ font-size:15px; letter-spacing:1px; white-space:nowrap; }
   .g-lives{ display:inline-flex; align-items:center; gap:2px; font-weight:800; color:#e5533d; }
@@ -1278,6 +1296,7 @@
             <div class="snd-pop hidden" id="sndPop" role="dialog" aria-label="Tetapan bunyi">
               <div class="sp-row"><span>🎵 Lagu IPC GO!</span><button class="sw" id="swLagu" type="button" role="switch" aria-checked="false"><i></i></button></div>
               <input type="range" class="vol" id="volLaguG" min="0" max="100" step="1" aria-label="Kekuatan lagu">
+              <div class="sp-row"><span>🗣️ Baca soalan automatik</span><button class="sw" id="swTts" type="button" role="switch" aria-checked="false"><i></i></button></div>
               <div class="sp-row"><span>🔔 Kesan bunyi</span><button class="sw" id="swSfx" type="button" role="switch" aria-checked="true"><i></i></button></div>
               <input type="range" class="vol" id="volSfx" min="0" max="100" step="1" aria-label="Kekuatan kesan bunyi">
             </div></div></div>
@@ -1401,6 +1420,7 @@
               </select></div>
             <div class="field"><label for="fQ">Cari nama</label><input id="fQ" class="upper" placeholder="NAMA"></div>
           </div>
+          <div class="st-sum" id="stSum"></div>
           <div class="bulk" id="bulkBar"></div>
           <div class="st-table" id="stafList"></div>
           <button class="btn btn-ghost btn-sm hidden" id="bMore" style="margin-top:10px;">Tunjuk lagi</button>
@@ -2265,20 +2285,101 @@ $('volLatar').addEventListener('input', e => { LATAR.vol = e.target.value / 100;
   if (LATAR.vol > 0 && !LATAR.mahu){ LATAR.auto = true; simpanLS('ipcLatarAuto2', '1'); setLatar(true); } });
 LATAR_AUDIO.forEach(x => ['play', 'pause'].forEach(ev => $(x).addEventListener(ev, kemasLatar)));
 // Pelayar tidak benarkan lagu main sendiri sebelum sentuhan pertama — mula pada sentuhan pertama di mana-mana
+// Telefon hanya kira "tap" pada touchend/pointerup/click (bukan pointerdown) sebagai izin main bunyi
+const SENTUH_EV = ['pointerup', 'touchend', 'click', 'keydown'];
+function buangSentuh(){ SENTUH_EV.forEach(ev => document.removeEventListener(ev, sentuhPertama, true)); }
 function sentuhPertama(e){
   if ($('mp').contains(e.target)) return;
-  LATAR.dahSentuh = true;
-  document.removeEventListener('pointerdown', sentuhPertama, true); document.removeEventListener('keydown', sentuhPertama, true);
-  if (LATAR.mahu) syncLatar();
+  if (!LATAR.mahu){ buangSentuh(); return; }
+  const id = laguSemasa(); if (!id){ return; }
+  const a = $(id); if (!a.paused){ LATAR.dahSentuh = true; buangSentuh(); kemasLatar(); return; }
+  a.volume = LATAR.vol;
+  try { if (a.readyState === 0) a.load(); } catch(x){}
+  const pr = a.play();
+  const ok = () => { LATAR.dahSentuh = true; buangSentuh(); kemasLatar(); };
+  if (pr && pr.then) pr.then(ok).catch(() => kemasLatar()); else ok();
 }
-document.addEventListener('pointerdown', sentuhPertama, true); document.addEventListener('keydown', sentuhPertama, true);
+SENTUH_EV.forEach(ev => document.addEventListener(ev, sentuhPertama, true));
 syncLatar();
+
+
+// ---- Komputer bacakan soalan ----
+// 1) Suara pelayar (speechSynthesis) jika ada suara; 2) jika tiada (cth dalam app/WebView) guna audio Google Translate TTS
+const TTS = { auto:true, suara:null, audio:null, giliran:[], aktif:false };
+try { TTS.auto = localStorage.getItem('ipcTtsAuto2') !== '0'; } catch(e){}
+const adaSS = () => 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+function pilihSuara(){
+  if (!adaSS()) return null;
+  const v = speechSynthesis.getVoices();
+  return v.find(x => /^ms(-|_|$)/i.test(x.lang)) || v.find(x => /^id(-|_|$)/i.test(x.lang)) || v.find(x => /malay|melayu|indones/i.test(x.name)) || null;
+}
+if (adaSS()){ speechSynthesis.onvoiceschanged = () => { TTS.suara = pilihSuara(); }; TTS.suara = pilihSuara(); }
+function laguPerlahan(on){ const v = on ? Math.min(LAGU.vol, 0.03) : LAGU.vol; if (LAGU.gain) LAGU.gain.gain.value = v; else $('laguGo').volume = v; }
+function butangTts(on){ const b = $('bTts'); if (b){ b.classList.toggle('on', on); b.textContent = on ? '⏹ Berhenti baca' : '🔈 Baca soalan'; } }
+function hentiBaca(){
+  TTS.aktif = false; TTS.giliran = [];
+  try { if (adaSS()) speechSynthesis.cancel(); } catch(e){}
+  if (TTS.audio){ try { TTS.audio.pause(); } catch(e){} TTS.audio = null; }
+  laguPerlahan(false); butangTts(false);
+}
+function teksSoalan(q){
+  const t = [];
+  if (q.senario) t.push(q.senario);
+  t.push(q.soalan);
+  if (q.jenis === 'MCQ' || q.jenis === 'Berbilang') q.pilihan.forEach((o, k) => t.push(`Pilihan ${'ABCDEF'[k]}. ${o}`));
+  else if (q.jenis === 'Susun') t.push('Susun langkah berikut ikut turutan yang betul.');
+  else if (q.jenis === 'PPE') t.push('Pilih P P E yang perlu dipakai.');
+  else if (q.jenis === 'Padanan') t.push('Padankan item di sebelah kiri dengan padanan di sebelah kanan.');
+  return t.join('. ').replace(/(\d)\s*[–-]\s*(\d)/g, '$1 hingga $2').replace(/[—–]/g, ',').replace(/\s+/g, ' ').replace(/\.\s*\./g, '.');
+}
+function potongTeks(t, max){
+  const out = []; let cur = '';
+  t.split(/(?<=[.,;:?!])\s+/).forEach(w => {
+    if ((cur + ' ' + w).trim().length > max){ if (cur) out.push(cur.trim()); while (w.length > max){ out.push(w.slice(0, max)); w = w.slice(max); } cur = w; }
+    else cur = (cur + ' ' + w).trim();
+  });
+  if (cur) out.push(cur); return out;
+}
+function tanpaRujukan(){
+  if (document.querySelector('meta[name=referrer]')) return;
+  const m = document.createElement('meta'); m.name = 'referrer'; m.content = 'no-referrer'; document.head.appendChild(m);
+}
+function bacaGoogle(teks){
+  tanpaRujukan();
+  TTS.giliran = potongTeks(teks, 180);
+  const seterus = () => {
+    if (!TTS.aktif || !TTS.giliran.length){ hentiBaca(); return; }
+    const a = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ms&q=' + encodeURIComponent(TTS.giliran.shift()));
+    a.volume = Math.max(0.3, SND.vol ?? 0.8); TTS.audio = a;
+    a.onended = seterus; a.onerror = () => { hentiBaca(); toast('Bacaan soalan gagal. Pastikan internet ada dan buka portal dalam Chrome/Safari (bukan dalam app lain).'); };
+    const pr = a.play(); if (pr && pr.catch) pr.catch(() => { hentiBaca(); });
+  };
+  seterus();
+}
+function bacaSoalan(){
+  if (TTS.aktif){ hentiBaca(); return; }
+  const q = GM.qs[GM.i]; if (!q || GM.semak) return;
+  const teks = teksSoalan(q);
+  TTS.aktif = true; butangTts(true); laguPerlahan(true);
+  TTS.suara = TTS.suara || pilihSuara();
+  if (adaSS() && !TTS.gagalSS){
+    const u = new SpeechSynthesisUtterance(teks);
+    if (TTS.suara){ u.voice = TTS.suara; u.lang = TTS.suara.lang; } else u.lang = 'ms-MY'; u.rate = 0.95; u.volume = Math.max(0.3, SND.vol ?? 0.8);
+    let mula = false; u.onstart = () => { mula = true; };
+    u.onend = () => { if (TTS.aktif) hentiBaca(); };
+    u.onerror = () => { if (!mula && TTS.aktif){ TTS.gagalSS = true; bacaGoogle(teks); } else hentiBaca(); };
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    setTimeout(() => { if (TTS.aktif && !mula && !speechSynthesis.speaking){ speechSynthesis.cancel(); TTS.gagalSS = true; bacaGoogle(teks); } }, 2500);
+  } else bacaGoogle(teks);
+}
+$('swTts').onclick = () => { TTS.auto = !TTS.auto; try { localStorage.setItem('ipcTtsAuto2', TTS.auto ? '1' : '0'); } catch(e){} $('swTts').setAttribute('aria-checked', TTS.auto); if (TTS.auto && !GM.semak && !TTS.aktif) bacaSoalan(); else if (!TTS.auto) hentiBaca(); };
+$('swTts').setAttribute('aria-checked', TTS.auto);
 
 // ---- Pemasa setiap soalan ----
 var TM = { id:null, akhir:0, jumlah:120, tikSeterus:0, habis:false };
 function masaSoalan(){ const v = Number(STATE.config && STATE.config.masaSoalan); return v >= 10 ? v : 120; }
 function fmtMasa(sec){ sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
-function hentiMasa(){ if (TM.id){ clearInterval(TM.id); TM.id = null; } $('gTimer').classList.add('stop'); }
+function hentiMasa(){ hentiBaca(); if (TM.id){ clearInterval(TM.id); TM.id = null; } $('gTimer').classList.add('stop'); }
 function mulaMasa(){
   hentiMasa(); TM.jumlah = masaSoalan(); TM.akhir = Date.now() + TM.jumlah * 1000; TM.tikSeterus = 0; TM.habis = false;
   $('gTimer').classList.remove('hidden', 'warn', 'crit', 'stop'); kemasMasa();
@@ -2350,7 +2451,7 @@ function paparSoalan(){
   }
   const api = !GM.pratonton && GM.streak >= 2 ? `<div class="g-streak">🔥 ${GM.streak} betul berturut-turut</div>` : '';
   $('gCard').innerHTML = `${api}${q.senario ? `<div class="g-sen">📋 ${esc(q.senario)}</div>` : ''}${mediaHTML(q.mediaJenis, q.mediaPautan)}
-    <p class="g-q">${esc(q.soalan)}</p>${body}<div id="gFb"></div>
+    <p class="g-q">${esc(q.soalan)}</p><button type="button" class="g-tts" id="bTts" onclick="bacaSoalan()">🔈 Baca soalan</button>${body}<div id="gFb"></div>
     <div class="g-act"><button class="btn-pill" id="bSemak" disabled>Semak Jawapan</button></div>`;
   if (q.jenis === 'Padanan') lukisPadanan();
   else if (q.jenis === 'PPE'){
@@ -2375,6 +2476,7 @@ function paparSoalan(){
   $('bSemak').onclick = () => semakJawapan(false);
   window.scrollTo({ top:0, behavior:'smooth' });
   mulaMasa();
+  if (TTS.auto) setTimeout(() => { if (!TTS.aktif) bacaSoalan(); }, 300);
 }
 function lukisSusun(){
   const q = GM.qs[GM.i];
@@ -2594,7 +2696,7 @@ function mainVideo(id){
 }
 function urlSlaid(u){
   u = String(u || ''); const g = u.match(/docs\.google\.com\/presentation\/d\/([-\w]{20,})/);
-  if (g) return `https://docs.google.com/presentation/d/${g[1]}/embed?start=false&loop=false&delayms=60000&rm=minimal`;
+  if (g) return `https://docs.google.com/presentation/d/${g[1]}/embed?start=false&loop=false&delayms=60000`;
   const f = idFailDriveJS(u) || (u.match(/[?&]id=([-\w]{20,})/) || [])[1];
   return f ? `https://drive.google.com/file/d/${f}/preview` : '';
 }
@@ -2605,7 +2707,9 @@ function bukaSlaid(id){
   REF.slaidIdx = k;
   $('mVideo').querySelector('.pill').innerHTML = '📊 Slaid Rujukan'; $('mVideo').querySelector('.pill').style.cssText = 'background:#e6f1fd;color:#1576d1;';
   $('vidTitle').textContent = x.tajuk;
-  $('vidBox').innerHTML = `<div class="g-media"><div class="yt"><iframe src="${esc(src)}" title="${esc(x.tajuk)}" allow="fullscreen" allowfullscreen loading="lazy"></iframe></div>
+  const gs = /docs\.google\.com\/presentation/.test(x.pautan);
+  $('vidBox').innerHTML = `<div class="g-media"><div class="yt ${gs ? '' : 'tinggi'}"><iframe src="${esc(src)}" title="${esc(x.tajuk)}" allow="fullscreen" allowfullscreen loading="lazy"></iframe></div>
+    <p class="sl-tip">${gs ? '◀ ▶ Guna anak panah di bar bawah slaid untuk tukar muka surat. Tekan ⛶ untuk skrin penuh.' : '↕️ Tatal (scroll) ke bawah dalam kotak untuk lihat muka surat seterusnya.'}</p>
     <div class="sl-nav"><button class="btn btn-ghost btn-sm" type="button" ${k === 0 ? 'disabled' : ''} onclick="bukaSlaid('${esc((L[k - 1] || {}).id || '')}')">◀ Tajuk sebelum</button>
     <span>${k + 1} / ${L.length}</span>
     <button class="btn btn-ghost btn-sm" type="button" ${k === L.length - 1 ? 'disabled' : ''} onclick="bukaSlaid('${esc((L[k + 1] || {}).id || '')}')">Tajuk seterusnya ▶</button></div>
@@ -2799,7 +2903,7 @@ async function loadCoDashboard(){
         <span><b>${esc(j.jabatan)}</b><small>${j.jumlah} staf · ${Math.round(pct(j.lencana5, j.jumlah))}% lengkap 5 lencana</small></span><span class="v">${j.lencana5} <small>orang</small></span></div>`).join('')
       : '<p class="muted-note">Belum ada staf yang lengkap 5 lencana.</p>';
     $('deptList').innerHTML = d.jabatan.map(j => `<button class="dept-row" data-j="${esc(j.jabatan)}" title="Lihat senarai staf ${esc(j.jabatan)}">
-      <span class="n">${esc(j.jabatan)} <small>(${j.jumlah})</small></span>
+      <span class="n">${esc(j.jabatan)} <small>(${j.jumlah})</small><span class="pm"><i class="x1">M1 ${Math.round(pct(j.m1, j.jumlah))}%</i><i class="x2">M2 ${Math.round(pct(j.m2, j.jumlah))}%</i></span></span>
       <span class="bar2"><span class="bar"><span class="b1" style="width:${pct(j.m1, j.jumlah)}%"></span></span><span class="bar"><span class="b2" style="width:${pct(j.m2, j.jumlah)}%"></span></span></span>
       <span class="p ${pct(j.lengkap, j.jumlah) >= 80 ? 'ok' : pct(j.lengkap, j.jumlah) < 50 ? 'bad' : ''}">${Math.round(pct(j.lengkap, j.jumlah))}%</span></button>`).join('');
     $('deptList').querySelectorAll('[data-j]').forEach(b => b.onclick = () => { $('fJab').value = b.dataset.j; loadStaf(); coTab('sec-staf'); });
@@ -2845,6 +2949,14 @@ function renderStaf(){
   const d = CO.cache[$('fJab').value || 'SEMUA']; if (!d) return;
   const list = tapisStaf(d.staf), belum = list.filter(s => !(s.m1 && s.m2));
   const emel = belum.filter(s => s.emel).map(s => s.emel);
+  const all = d.staf, N = all.length, b1 = all.filter(s => !s.m1).length, b2 = all.filter(s => !s.m2).length, bb = all.filter(s => !s.m1 && !s.m2).length, ok = all.filter(s => s.m1 && s.m2).length;
+  const pc = v => N ? Math.round(v / N * 100) : 0;
+  $('stSum').innerHTML = `<div class="ss-h">📋 Ringkasan ${esc($('fJab').value === 'SEMUA' ? 'semua jabatan' : $('fJab').value)} · <b>${N}</b> staf</div>
+    <div class="ss-grid">
+      <div class="ss bad"><b>${b1}</b><span>belum Modul 1</span><small>${pc(N - b1)}% sudah lengkap M1</small></div>
+      <div class="ss bad"><b>${b2}</b><span>belum Modul 2</span><small>${pc(N - b2)}% sudah lengkap M2</small></div>
+      <div class="ss warn"><b>${bb}</b><span>belum kedua-dua</span><small>Modul 1 &amp; 2</small></div>
+      <div class="ss ok"><b>${ok}</b><span>lengkap wajib</span><small>${pc(ok)}% jabatan</small></div></div>`;
   const jabLbl = $('fJab').value === 'SEMUA' ? 'HTPN' : $('fJab').value;
   const grp = `Peringatan daripada Unit Kawalan Infeksi (UKI) HTPN — ${jabLbl}:\nStaf berikut belum lengkap EPSA Modul 1/2 (WAJIB). Sila lengkapkan di EPSA dan upload sijil melalui Portal Latihan IPC HTPN: ${pautanPortal()}\n\n` + belum.slice(0, 80).map((s, i) => `${i + 1}. ${s.nama} — belum ${belumTeks(s)}`).join('\n') + (belum.length > 80 ? `\n…dan ${belum.length - 80} lagi` : '');
   $('bulkBar').innerHTML = `<span><b>${list.length}</b> staf dipaparkan${belum.length ? ` · <b style="color:var(--coral)">${belum.length}</b> belum lengkap wajib` : ''}</span>
