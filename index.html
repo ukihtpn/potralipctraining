@@ -1067,6 +1067,44 @@
   .spinner.dark{ border-color:#cfe3e1; border-top-color:var(--teal); }
   @keyframes spin{ to{ transform:rotate(360deg);} }
   .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--navy); color:#fff; padding:12px 18px; border-radius:12px; font-size:13px; font-weight:700; z-index:999; box-shadow:0 10px 30px rgba(0,0,0,0.35); animation:up .25s ease; max-width:90vw; text-align:center; }
+
+  /* ===== Navigasi koordinator: sidebar (desktop) + bar bawah (mobile) ===== */
+  .co-nav svg, .co-bot svg{ width:18px; height:18px; flex:0 0 auto; }
+  .co-nav .cn-h{ display:none; }
+  .co-bot{ display:none; }
+  @media (min-width: 900px){
+    body.co-mode .wrap{ max-width:1240px; }
+    #coMain:not(.hidden){ display:grid; grid-template-columns:230px minmax(0,1fr); gap:0 26px; align-items:start; }
+    #coMain > .co-nav{ grid-column:1; grid-row:1 / span 50; position:sticky; top:12px; display:flex; flex-direction:column; gap:2px; overflow:visible;
+      background:#fff; border:1px solid #e3eef9; border-radius:18px; padding:14px 10px; margin:0; box-shadow:0 6px 20px rgba(21,118,209,.07); }
+    #coMain > .co-sec{ grid-column:2; }
+    #coMain > :not(.co-nav):not(.co-bot){ grid-column:2; }
+    .co-nav .cn-h{ display:block; margin:12px 10px 4px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#8aa3bd; }
+    .co-nav .cn-h:first-child{ margin-top:2px; }
+    body.co-mode .co-nav a{ display:flex; align-items:center; gap:11px; background:transparent; color:#2d4a68; font-size:13.5px; font-weight:600; padding:10px 12px; border-radius:11px; position:relative; }
+    body.co-mode .co-nav a:hover{ background:#f1f7fe; }
+    body.co-mode .co-nav a.on{ background:#e6f1fd; color:#1576d1; font-weight:700; }
+    body.co-mode .co-nav a.on::before{ content:""; position:absolute; right:-10px; top:8px; bottom:8px; width:4px; border-radius:4px; background:#1576d1; }
+    .co-nav a b{ margin-left:auto !important; }
+  }
+  @media (max-width: 899px){
+    body.co-mode #coMain:not(.hidden){ padding-bottom:84px; }
+    body.co-mode .co-nav{ flex-wrap:nowrap !important; overflow-x:auto; gap:8px; }
+    .co-nav a{ display:none !important; align-items:center; gap:6px; }
+    .co-nav[data-g="dash"] a[data-g="dash"], .co-nav[data-g="staf"] a[data-g="staf"], .co-nav[data-g="latih"] a[data-g="latih"], .co-nav[data-g="lap"] a[data-g="lap"], .co-nav[data-g="lain"] a[data-g="lain"]{ display:inline-flex !important; }
+    body.co-li .co-nav a.only-uki, body.co-uki .co-nav a.only-li{ display:none !important; }
+    .co-nav svg{ width:15px; height:15px; }
+    #coMain:not(.hidden) .co-bot{ display:flex; position:fixed; left:0; right:0; bottom:0; z-index:40; gap:6px; padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));
+      background:rgba(255,255,255,.97); border-top:1px solid #dbe9f7; box-shadow:0 -6px 20px rgba(11,74,143,.10); backdrop-filter:blur(8px); }
+    .co-bot button{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:0; border-radius:14px;
+      background:#eef5fd; color:#1f4f86; font:700 10.5px/1.1 inherit; font-family:inherit; letter-spacing:-.1px; padding:9px 0 8px; position:relative; cursor:pointer; }
+    .co-bot button svg{ width:20px; height:20px; }
+    .co-bot button.on{ background:#1576d1; color:#fff; box-shadow:0 4px 12px rgba(21,118,209,.35); }
+    .co-bot button span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    .co-bot b{ position:absolute; top:4px; right:calc(50% - 22px); background:#e53935; color:#fff; font-size:10px; min-width:16px; height:16px; line-height:16px; border-radius:8px; padding:0 4px; }
+    body.co-li .co-bot .only-uki, body.co-li #botStaf{ display:none; }
+    .co-bot{ gap:5px !important; }
+  }
 </style>
 </head>
 <body>
@@ -1392,18 +1430,30 @@
       <button class="backlink" onclick="tutupKoordinator()">← Keluar Panel</button>
       <p class="panel-title" id="coPanelTitle">🔐 Panel Koordinator UKI</p>
       <div id="coMain" class="hidden">
-        <nav class="co-nav" aria-label="Bahagian panel">
-          <a href="#sec-ljab" class="only-li">Dashboard Jabatan</a>
-          <a href="#sec-dash" class="only-uki">Dashboard</a>
-          <a href="#sec-baru">Pendaftaran Baru <b id="navBaru">0</b></a>
-          <a href="#sec-staf">Senarai Staf</a>
-          <a href="#sec-lap">Jana Laporan</a>
-          <a href="#sec-or">Orientasi</a>
-          <a href="#sec-ref">Bahan Rujukan</a>
-          <a href="#sec-soalan">Soalan Permainan</a>
-          <a href="#sec-kursus">Kursus <b id="navKr" class="hidden">0</b></a>
-          <a href="#sec-liaison" class="only-uki">Liaison Jabatan</a>
-          <a href="#sec-fb">Maklum Balas <b id="navFb" class="hidden">0</b></a>
+        <nav class="co-nav" aria-label="Bahagian panel" data-g="dash">
+          <p class="cn-h">Menu Utama</p>
+          <a href="#sec-ljab" class="only-li" data-g="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard Jabatan</span></a>
+          <a href="#sec-dash" class="only-uki" data-g="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard</span></a>
+          <p class="cn-h">Staf</p>
+          <a href="#sec-staf" data-g="staf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Senarai Staf</span></a>
+          <a href="#sec-baru" data-g="staf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span>Pendaftaran Baru</span> <b id="navBaru">0</b></a>
+          <p class="cn-h only-uki">Latihan</p>
+          <a href="#sec-or" data-g="latih"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><span>Orientasi</span></a>
+          <a href="#sec-kursus" data-g="latih"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Kursus</span> <b id="navKr" class="hidden">0</b></a>
+          <a href="#sec-ref" data-g="latih"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg><span>Bahan Rujukan</span></a>
+          <a href="#sec-soalan" data-g="latih"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="13" r="1"/><circle cx="18" cy="11" r="1"/><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6L2 15.5A3 3 0 0 0 7.2 18l1.6-2h6.4l1.6 2a3 3 0 0 0 5.2-2.5l-.7-6.9A4 4 0 0 0 17.3 5z"/></svg><span>Soalan Permainan</span></a>
+          <p class="cn-h only-uki">Laporan</p>
+          <a href="#sec-lap" data-g="lap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Jana Laporan</span></a>
+          <a href="#sec-fb" data-g="lap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.8 8.8 0 0 1-4-.9L3 21l1.9-5A8.4 8.4 0 1 1 21 11.5z"/></svg><span>Maklum Balas</span> <b id="navFb" class="hidden">0</b></a>
+          <p class="cn-h only-uki">Lain-lain</p>
+          <a href="#sec-liaison" class="only-uki" data-g="lain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>Liaison Jabatan</span></a>
+        </nav>
+        <nav class="co-bot" aria-label="Menu panel">
+          <button type="button" data-g="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard</span></button>
+          <button type="button" data-g="staf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Staf</span><b class="hidden" id="botStaf"></b></button>
+          <button type="button" data-g="latih" class="only-uki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><span>Latihan</span><b class="hidden" id="botLatih"></b></button>
+          <button type="button" data-g="lap" class="only-uki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Laporan</span><b class="hidden" id="botLap"></b></button>
+          <button type="button" data-g="lain" class="only-uki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg><span>Lain-lain</span></button>
         </nav>
 
         <!-- 1. PENDAFTARAN BARU -->
@@ -2899,6 +2949,9 @@ function coTab(id){
   if (id === 'sec-liaison' && STATE.coPin) loadCoLiaison();
   document.querySelectorAll('.co-sec').forEach(x => x.classList.toggle('on', x.id === id));
   document.querySelectorAll('.co-nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id));
+  const an = document.querySelector(`.co-nav a[href="#${id}"]`), g = an ? an.dataset.g : 'dash';
+  document.querySelector('.co-nav').dataset.g = g;
+  document.querySelectorAll('.co-bot button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 function tutupKoordinator(){
@@ -2908,6 +2961,19 @@ function tutupKoordinator(){
   $('app').classList.add('hidden'); $('screen-auth').classList.remove('hidden'); authStep('a-status'); syncLatar();
 }
 document.querySelectorAll('.co-nav a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); coTab(a.getAttribute('href').slice(1)); }));
+// bar bawah (mobile): buka bahagian pertama yang boleh dilihat dalam kumpulan itu
+document.querySelectorAll('.co-bot button').forEach(b => b.addEventListener('click', () => {
+  const li = document.body.classList.contains('co-li');
+  const a = [...document.querySelectorAll(`.co-nav a[data-g="${b.dataset.g}"]`)].find(x => !x.classList.contains(li ? 'only-uki' : 'only-li'));
+  if (a) coTab(a.getAttribute('href').slice(1));
+}));
+// salin lencana nombor (Pendaftaran Baru / Kursus / Maklum Balas) ke bar bawah
+(function(){
+  const pas = [['navBaru','botStaf'],['navKr','botLatih'],['navFb','botLap']];
+  const sync = () => pas.forEach(([s, d]) => { const a = $(s), b = $(d); if (!a || !b) return; const n = parseInt(a.textContent, 10) || 0; const show = n > 0 && !a.classList.contains('hidden'); b.textContent = n; b.classList.toggle('hidden', !show); });
+  pas.forEach(([s]) => { const el = $(s); if (el) new MutationObserver(sync).observe(el, { childList:true, characterData:true, subtree:true, attributes:true }); });
+  sync();
+})();
 
 $('bCoLogin').onclick = async () => {
   const pin = $('coPin').value.trim(); if (!pin) return;
