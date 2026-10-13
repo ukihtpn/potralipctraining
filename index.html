@@ -674,6 +674,7 @@
   #screen-auth{ --teal:#1576d1; --seafoam:#2b8fe0; --mint:#3fa9f5; --navy:#0f2f5c; --line:#d6e8f8;
     background:linear-gradient(180deg,#0b4a8f 0%,#3d97e0 34%,#a9d8f7 66%,#e6f5fe 100%); }
   #screen-auth::before{ opacity:.45; }
+  #screen-auth{ justify-content:flex-start; }
   #screen-auth .auth-card{ box-shadow:0 0 0 1px rgba(95,180,236,.45), 0 24px 60px rgba(11,74,143,.35); }
   #screen-auth .big-choice:hover{ background:#f2f8ff; }
   #screen-auth .big-choice .ic{ background:#e4f1fd; }
@@ -1311,11 +1312,11 @@
       <h2>Daftar Staf</h2>
       <p class="lead">Nama anda tiada dalam rekod. Isi maklumat di bawah — UKI akan sahkan jabatan anda kemudian.</p>
       <div class="field"><label for="dNama">Nama Penuh</label><input id="dNama" class="upper" autocomplete="off" placeholder="CTH: SITI AMINAH BINTI ABDULLAH"><div class="name-hint">🪪 Nama penuh <b>SEPERTI DALAM KAD PENGENALAN (IC)</b>. Nama ini akan digunakan untuk log masuk.</div></div>
-      <div class="field"><label for="dIc">No. Kad Pengenalan</label><input id="dIc" inputmode="numeric" maxlength="12" placeholder="12 digit tanpa sengkang"></div>
+      <div class="field"><label for="dIc">No. Kad Pengenalan</label><input id="dIc" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="12 digit tanpa sengkang"></div>
       <div class="field"><label for="dTel">No. Telefon</label><input id="dTel" inputmode="tel" maxlength="12" placeholder="cth: 0123456789"></div>
       <div class="field"><label for="dJab">Jabatan / Unit</label><select id="dJab"><option value="">— Pilih jabatan anda —</option></select><div class="hint">Tidak pasti? Pilih <b>Tidak pasti</b> — UKI akan sahkan.</div></div>
       <div class="field hidden" id="dInstWrap"><label for="dInst">Institusi / Universiti / Kolej</label><input id="dInst" placeholder="cth: Kolej Kejururawatan …"></div>
-      <div class="field"><label for="dEmel">Emel</label><input id="dEmel" type="email" placeholder="cth: nama@moh.gov.my"></div>
+      <div class="field"><label for="dEmel">Emel</label><input id="dEmel" type="email" autocomplete="email" name="emel-daftar" placeholder="cth: nama@moh.gov.my"></div>
       <button class="btn btn-primary btn-block" id="btnDaftar" style="margin-top:18px;">Hantar Pendaftaran</button>
       <div class="msg" id="daftarMsg"></div>
     </div>
