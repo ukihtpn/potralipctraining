@@ -647,6 +647,9 @@
     #v-dash > *{ order:5; }
     #v-dash > .dash-top{ order:0; } #v-dash > #cKuiz{ order:1; }
     #v-dash > #pModul{ order:3; } #v-dash > #pLencana{ order:4; } #v-dash > #pBahan{ order:5; }
+    /* staf bukan klinikal: kad Kuiz terus di bawah profil */
+    body.st-bk #v-dash > .dash-top{ display:contents; }
+    body.st-bk #v-dash .d-prof{ order:-4; } body.st-bk #v-dash .d-notes{ order:-3; } body.st-bk #v-dash > #cKuiz{ order:-2; } body.st-bk #v-dash .d-scene{ order:0; }
   }
   .cta-row{ display:grid; grid-template-columns:1fr 1.4fr 0.8fr; gap:10px; align-items:center; margin-top:16px; }
   .cta-gift{ width:100%; border-radius:16px; }
@@ -1162,6 +1165,10 @@
   .stg.nx{ border-color:#f7c325; box-shadow:0 0 0 3px rgba(247,195,37,.35); }
   .stg:disabled{ opacity:.5; cursor:not-allowed; font-size:11px; }
   .rp-t.rp-ok th{ background:#0b8a63 !important; }
+
+  .kz-btns{ display:flex; gap:10px; flex-wrap:wrap; position:relative; z-index:1; }
+  .kz-btns .btn-pill:not(.gold){ background:#fff; color:#0e7c86; box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .ri-mv{ width:100%; margin-top:6px; border:1px solid #bfe6de; background:#e8f7f4; color:#0e7c86; border-radius:8px; padding:5px 0; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -1330,7 +1337,7 @@
           <div><span class="kz-tag">WAJIB · BUKAN KLINIKAL</span><h3>Kuiz Kesedaran IPC</h3><p class="sub" id="kuizSub"></p></div>
           <span class="kz-st" id="kuizSt"></span></div>
         <div class="kz-steps"><span id="kzStep1">📖 <b>1</b> Baca slaid</span><i>›</i><span>🎮 <b>2</b> Jawab kuiz</span><i>›</i><span>📜 <b>3</b> E-sijil</span></div>
-        <button class="btn-pill gold kz-go" type="button" onclick="go('v-kuiz')">▶ Mula</button>
+        <div class="kz-btns"><button class="btn-pill gold kz-go" type="button" onclick="go('v-kuiz')">▶ Mula</button><button class="btn-pill kz-go hidden" id="kzSijil" type="button" onclick="bukaSijilKuiz()">📜 E-Sijil Saya</button></div>
       </div>
 
       <!-- MODUL LATIHAN -->
@@ -1578,13 +1585,15 @@
           <h3 class="co-h">👥 Senarai Staf</h3>
           <div class="filters">
             <div class="field"><label for="fJab">Jabatan</label><select id="fJab"></select></div>
-            <div class="field"><label for="fSt">Status EPSA wajib</label>
+            <div class="field"><label for="fSt">Status latihan wajib</label>
               <select id="fSt">
                 <option value="belum">Belum lengkap Modul 1 / 2</option>
                 <option value="belum1">Belum Modul 1</option>
                 <option value="belum2">Belum Modul 2</option>
                 <option value="lengkap">Lengkap Modul 1 &amp; 2</option>
                 <option value="lencana5">Dapat 5 lencana</option>
+                <option value="bkBelum">Bukan klinikal — belum lulus kuiz</option>
+                <option value="bkLulus">Bukan klinikal — lulus kuiz</option>
                 <option value="semua">Semua staf</option>
               </select></div>
             <div class="field"><label for="fJaw">Jawatan</label><select id="fJaw"><option value="">Semua jawatan</option></select></div>
@@ -2087,8 +2096,11 @@ function renderDashboard(){
   $('cOrientasi').classList.toggle('hidden', !isBaru && !p.orientasi);
   renderOrientasiCard();
   $('cKuiz').classList.toggle('hidden', !isBK);
+  // staf bukan klinikal tidak wajib EPSA — sembunyi kad & panel EPSA
+  $('cProg').classList.toggle('hidden', isBK); $('pModul').classList.toggle('hidden', isBK); document.body.classList.toggle('st-bk', isBK);
   $('kuizSub').innerHTML = p.kuizBukanKlinikal ? `✓ Lulus — ${esc(p.kuizBukanKlinikal)}. Boleh ulang untuk ulang kaji.` : 'Baca slaid kesedaran IPC dan jawab 8 soalan (lulus 5/8). E-sijil dijana automatik.';
   $('kuizSt').textContent = p.kuizBukanKlinikal ? '✓ LULUS' : 'BELUM'; $('kuizSt').classList.toggle('ok', !!p.kuizBukanKlinikal); kemasKadKuiz();
+  $('kzSijil').classList.toggle('hidden', !p.kuizBukanKlinikal);
   renderProgress();
   renderBadges();
 }
@@ -2669,6 +2681,16 @@ function soalanKuizBK(){
     mediaJenis:'Tiada', mediaPautan:'', penerangan:(KUIZ_PENERANGAN[i] || [''])[0], aktif:true,
     en:{ senario:'', soalan:tr(q.q), pilihan:q.options.map(tr), pasangan:[], penerangan:(KUIZ_PENERANGAN[i] || ['', ''])[1] } }));
 }
+// acak susunan pilihan jawapan (MCQ / Berbilang) — jawapan betul & terjemahan BI ikut sekali
+function acakPilihan(q){
+  if (!q || !(q.jenis === 'MCQ' || q.jenis === 'Berbilang') || !Array.isArray(q.pilihan) || q.pilihan.length < 2) return q;
+  const ord = acak(q.pilihan.map((_, i) => i)), baru = Object.assign({}, q);
+  baru.pilihan = ord.map(i => q.pilihan[i]);
+  const peta = j => String(ord.indexOf(Number(j) - 1) + 1);
+  baru.jawapan = String(q.jawapan).split(',').map(x => x.trim()).filter(Boolean).map(peta).join(',');
+  if (q.en && Array.isArray(q.en.pilihan) && q.en.pilihan.length === q.pilihan.length) baru.en = Object.assign({}, q.en, { pilihan: ord.map(i => q.en.pilihan[i]) });
+  return baru;
+}
 function kuizL(){
   const img = (document.querySelector('.auth-logo img') || {}).src || '';
   return { key:'kuizbk', img, nama:'Kuiz Kesedaran IPC', tajuk:'Kuiz Kesedaran IPC (Bukan Klinikal)', lulus: PASS_MARK / QUESTIONS.length * 100 };
@@ -2684,7 +2706,7 @@ async function mulaGame(key, senaraiPratonton, peringkat){
     $('gCard').innerHTML = '<div style="text-align:center;padding:30px"><span class="spinner dark"></span></div>';
     const en = typeof LANG !== 'undefined' && LANG === 'en', kc = 'kuizbk' + (en ? '_en' : '');
     try { if (!GM.cache[kc]){ const d = await apiGet(en ? { type:'soalan_lencana', lencana:'kuizbk', bahasa:'en' } : { type:'soalan_lencana', lencana:'kuizbk' }); GM.cache[kc] = d.items || []; } } catch(e){}
-    GM.asal = (GM.cache[kc] && GM.cache[kc].length) ? GM.cache[kc] : soalanKuizBK();
+    GM.asal = acak((GM.cache[kc] && GM.cache[kc].length) ? GM.cache[kc] : soalanKuizBK()).map(acakPilihan);
     GM.qs = GM.asal.map(qBahasa); return mulaPusingan();
   }
   $('gCard').innerHTML = '<div style="text-align:center;padding:30px"><span class="spinner dark"></span></div>';
@@ -3206,29 +3228,41 @@ async function showResult(){
     try { const d = await apiPost({ type:'kuiz', id: STATE.profil.id, markah: `${score}/${QUESTIONS.length}` }); if (d.ok){ STATE.profil.kuizBukanKlinikal = d.nilai; renderDashboard(); } } catch(e){}
   }
 }
+// E-sijil disimpan dalam portal: dijana semula daripada rekod lulus (tarikh & markah) bila-bila masa
+function bukaSijilKuiz(){
+  const p = STATE.profil; if (!p || !p.kuizBukanKlinikal) return;
+  const m = String(p.kuizBukanKlinikal).match(/(\d{4}-\d{2}-\d{2}).*?\((\d+)\s*\/\s*(\d+)\)/);
+  generateCert(p.nama, p.jabatan, m ? m[2] : '', m ? m[3] : '', m ? m[1] : null);
+  const url = $('certCanvas').toDataURL('image/png');
+  $('mVideo').querySelector('.pill').innerHTML = '📜 E-Sijil'; $('mVideo').querySelector('.pill').style.cssText = 'background:#e8f7f4;color:#0e7c86;';
+  $('vidTitle').textContent = 'Kuiz Kesedaran IPC (Bukan Klinikal)';
+  $('vidBox').innerHTML = `<img src="${url}" alt="E-sijil" style="width:100%;border-radius:10px;border:1px solid #d9ebf9"><div class="g-act" style="justify-content:center;margin-top:12px"><button class="btn-pill gold" type="button" onclick="$('bCert').click()">📥 Muat Turun E-Sijil (PNG)</button></div>`;
+  $('mVideo').classList.remove('hidden');
+}
 async function tamatKuizBK(habis){
   hentiMasa(); $('gTimer').classList.add('hidden');
   const n = GM.qs.length, perlu = Math.ceil(n * GM.l.lulus / 100 - 1e-9), lulus = !habis && GM.skor >= perlu, p = STATE.profil;
   $('gBar').style.width = '100%'; $('gFloat').innerHTML = '';
   if (GM.pratonton){ $('gCard').innerHTML = `<div class="g-end"><h3>Tamat Pratonton</h3><div class="pct">${GM.skor}/${n}</div><p>${GM.skor} / ${n} betul · lulus ${perlu}/${n}</p><div class="g-act"><button class="btn-pill" onclick="keluarGame()">← Kembali ke panel</button></div></div>`; return; }
   const tajuk = lulus ? '🎉 Tahniah, Anda Lulus!' : habis ? 'Alamak, nyawa habis! 💔' : 'Hampir berjaya!';
-  const nota = lulus ? 'Keputusan direkod dalam profil anda. E-sijil sedia dimuat turun.' : `Perlukan sekurang-kurangnya ${perlu}/${n}. Tonton semula video dan cuba lagi.`;
+  const nota = lulus ? 'Keputusan direkod dalam profil anda. E-sijil sedia dimuat turun.' : `Perlukan sekurang-kurangnya ${perlu}/${n}. Jawab semula — soalan & pilihan jawapan akan diacak. Tidak perlu tonton video semula.`;
   $('gCard').innerHTML = `<div class="g-end ${lulus ? 'pass' : 'fail'}"><div class="kz-end-ic">${lulus ? '📜' : '📖'}</div>
     <h3>${tajuk}</h3>
     <div class="pct">${GM.skor}/${n}</div><p>${GM.skor} / ${n} betul · lulus ${perlu}/${n}</p>
     <div class="stats"><span>⭐ ${GM.mata} mata</span><span>🔥 Streak terbaik: ${GM.streakMax}</span><span>❤️ Baki nyawa: ${GM.nyawa}/${GM.nyawaMax}</span></div>
     <p style="margin-top:10px">${nota}</p>
     ${lulus ? '<img id="kzCert" class="kz-cert" alt="E-sijil">' : ''}
-    <div class="g-act">${lulus ? `<button class="btn-pill gold" onclick="$('bCert').click()">📥 Muat Turun E-Sijil</button>` : `<button class="btn-pill gold" onclick="go('v-kuiz')">🎬 Tonton semula</button>`}
-      <button class="btn-pill sky" onclick="mulaGame('kuizbk')">🔁 ${lulus ? 'Ulang Kuiz (Pilihan)' : 'Cuba Lagi'}</button><button class="btn-pill" onclick="go('v-dash')">🏠 Dashboard</button></div></div>`;
+    ${lulus ? '<p class="muted-note" style="margin-top:8px">📜 E-sijil disimpan dalam portal — boleh dibuka semula bila-bila masa melalui butang <b>E-Sijil Saya</b> di dashboard.</p>' : ''}
+    <div class="g-act">${lulus ? `<button class="btn-pill gold" onclick="$('bCert').click()">📥 Muat Turun E-Sijil</button><button class="btn-pill sky" onclick="mulaGame('kuizbk')">🔁 Ulang Kuiz (Pilihan)</button>` : `<button class="btn-pill gold" onclick="mulaGame('kuizbk')">🔁 Jawab Semula (soalan diacak)</button>`}
+      <button class="btn-pill" onclick="go('v-dash')">🏠 Dashboard</button></div></div>`;
   if (lulus){ bunyi('menang'); konfeti(); } else bunyi('kalah');
   if (lulus && p){
-    generateCert(p.nama, p.jabatan, GM.skor, n);
+    generateCert(p.nama, p.jabatan, GM.skor, n, new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10));
     setTimeout(() => { const im = $('kzCert'); if (im) im.src = $('certCanvas').toDataURL('image/png'); }, 50);
     try { const d = await apiPost({ type:'kuiz', id: p.id, markah: `${GM.skor}/${n}` }); if (d.ok){ p.kuizBukanKlinikal = d.nilai; renderDashboard(); } } catch(e){}
   }
 }
-function generateCert(name, dept, score, total){
+function generateCert(name, dept, score, total, tarikhISO){
   const c = $('certCanvas'), x = c.getContext('2d'), W = c.width, H = c.height;
   x.fillStyle = '#F4FBFA'; x.fillRect(0,0,W,H);
   x.strokeStyle = '#028090'; x.lineWidth = 10; x.strokeRect(24,24,W-48,H-48);
@@ -3243,13 +3277,14 @@ function generateCert(name, dept, score, total){
   x.fillStyle = '#028090'; x.fillText(name, W/2, 365);
   x.font = '400 14px Arial'; x.fillStyle = '#5a7573'; x.fillText('telah berjaya menyelesaikan modul dan penilaian kuiz berkaitan', W/2, 415);
   if (dept) x.fillText(`Jabatan / Unit: ${dept}`, W/2, 438);
-  const ds = new Date().toLocaleDateString('ms-MY', { day:'numeric', month:'long', year:'numeric' });
+  const tD = tarikhISO ? new Date(tarikhISO + 'T12:00:00') : new Date(), ds = tD.toLocaleDateString('ms-MY', { day:'numeric', month:'long', year:'numeric' });
+  const rujuk = 'HTPN-UKI-' + ((STATE.profil && STATE.profil.id) || 'X').replace(/[^A-Z0-9]/gi, '') + '-' + tD.toISOString().slice(0, 10).replace(/-/g, '');
   x.font = '700 15px Arial'; x.fillStyle = '#0B3D42'; x.fillText(`Markah: ${score} / ${total}`, W/2 - 140, 490); x.fillText(`Tarikh: ${ds}`, W/2 + 140, 490);
   if (TTD_IMG.complete && TTD_IMG.naturalWidth){ const tw = 190, th = tw * TTD_IMG.naturalHeight / TTD_IMG.naturalWidth; x.drawImage(TTD_IMG, W/2 - tw/2, 600 - th, tw, th); }
   x.strokeStyle = '#0B3D42'; x.lineWidth = 1.2; x.beginPath(); x.moveTo(W/2-130, 604); x.lineTo(W/2+130, 604); x.stroke();
   x.font = '700 14px Arial'; x.fillStyle = '#0B3D42'; x.fillText(AUTH_NAMA, W/2, 624);
   x.font = '400 12.5px Arial'; x.fillStyle = '#5a7573'; x.fillText(AUTH_TITLE, W/2, 642);
-  x.font = '400 11px Arial'; x.fillStyle = '#8aa3a1'; x.fillText(`No. Rujukan Sijil: HTPN-UKI-${Date.now().toString(36).toUpperCase()} · ID Staf: ${STATE.profil ? STATE.profil.id : ''}`, W/2, 674);
+  x.font = '400 11px Arial'; x.fillStyle = '#8aa3a1'; x.fillText(`No. Rujukan Sijil: ${rujuk} · ID Staf: ${STATE.profil ? STATE.profil.id : ''}`, W/2, 674);
   x.font = 'italic 400 12px Arial'; x.fillText('Sijil ini dijana secara automatik oleh Unit Kawalan Infeksi HTPN', W/2, 698);
   const url = c.toDataURL('image/png'); $('certImg').src = url;
   $('bCert').onclick = () => { const a = document.createElement('a'); a.href = url; a.download = `E-Sijil_IPC_${name.replace(/[^a-zA-Z0-9]+/g,'_')}.png`; a.click(); };
@@ -3369,9 +3404,10 @@ async function loadCoDashboard(){
       <div class="kpi"><div class="v">${d.klinikal.toLocaleString('ms-MY')}</div><div class="l">Klinikal</div></div>
       <div class="kpi"><div class="v">${d.bukanKlinikal.toLocaleString('ms-MY')}</div><div class="l">Bukan klinikal</div></div>
       <div class="kpi"><div class="v">${d.attachment}</div><div class="l">Staf attachment</div></div>
-      <div class="kpi acc"><div class="v">${pct(d.m1, d.jumlah)}%</div><div class="l">EPSA Modul 1 · ${d.m1.toLocaleString('ms-MY')} staf</div></div>
-      <div class="kpi acc"><div class="v">${pct(d.m2, d.jumlah)}%</div><div class="l">EPSA Modul 2 · ${d.m2.toLocaleString('ms-MY')} staf</div></div>
-      <div class="kpi acc"><div class="v">${pct(d.lengkap, d.jumlah)}%</div><div class="l">Lengkap kedua-dua (wajib)</div></div>
+      <div class="kpi acc"><div class="v">${pct(d.m1, d.epsaN ?? d.jumlah)}%</div><div class="l">EPSA Modul 1 · ${d.m1.toLocaleString('ms-MY')} / ${(d.epsaN ?? d.jumlah).toLocaleString('ms-MY')} staf klinikal</div></div>
+      <div class="kpi acc"><div class="v">${pct(d.m2, d.epsaN ?? d.jumlah)}%</div><div class="l">EPSA Modul 2 · ${d.m2.toLocaleString('ms-MY')} staf</div></div>
+      <div class="kpi acc"><div class="v">${pct(d.lengkap, d.epsaN ?? d.jumlah)}%</div><div class="l">Lengkap EPSA wajib (klinikal)</div></div>
+      ${d.kuizBK ? `<div class="kpi acc" style="background:#e8f7f4;border-color:#bfe6de"><div class="v" style="color:#0e7c86">${pct(d.kuizBK.lulus, d.kuizBK.jumlah)}%</div><div class="l">Kuiz Kesedaran IPC (bukan klinikal) · ${d.kuizBK.lulus}/${d.kuizBK.jumlah} lulus</div></div>` : ''}
       <div class="kpi gold"><div class="v">${d.lencana[5]}</div><div class="l">Dapat semua 5 lencana</div></div>`;
     const kat = [['Klinikal', d.klinikal, 'var(--teal)'], ['Bukan klinikal', d.bukanKlinikal, 'var(--gold)'], ['Belum ditetapkan', d.belumKategori, '#b9c9c7']];
 
@@ -3382,14 +3418,14 @@ async function loadCoDashboard(){
         <span><b>${esc(j.jabatan)}</b><small>${j.jumlah} staf · ${Math.round(pct(j.lencana5, j.jumlah))}% lengkap 5 lencana</small></span><span class="v">${j.lencana5} <small>orang</small></span></div>`).join('')
       : '<p class="muted-note">Belum ada staf yang lengkap 5 lencana.</p>';
     $('deptList').innerHTML = d.jabatan.map(j => `<button class="dept-row" data-j="${esc(j.jabatan)}" title="Lihat senarai staf ${esc(j.jabatan)}">
-      <span class="n">${esc(j.jabatan)} <small>(${j.jumlah})</small><span class="pm"><i class="x1">M1 ${Math.round(pct(j.m1, j.jumlah))}%</i><i class="x2">M2 ${Math.round(pct(j.m2, j.jumlah))}%</i></span></span>
-      <span class="bar2"><span class="bar"><span class="b1" style="width:${pct(j.m1, j.jumlah)}%"></span></span><span class="bar"><span class="b2" style="width:${pct(j.m2, j.jumlah)}%"></span></span></span>
-      <span class="p ${pct(j.lengkap, j.jumlah) >= 80 ? 'ok' : pct(j.lengkap, j.jumlah) < 50 ? 'bad' : ''}">${Math.round(pct(j.lengkap, j.jumlah))}%</span></button>`).join('');
+      <span class="n">${esc(j.jabatan)} <small>(${j.jumlah})</small><span class="pm"><i class="x1">M1 ${Math.round(pct(j.m1, j.epsa ?? j.jumlah))}%</i><i class="x2">M2 ${Math.round(pct(j.m2, j.epsa ?? j.jumlah))}%</i></span></span>
+      <span class="bar2"><span class="bar"><span class="b1" style="width:${pct(j.m1, j.epsa ?? j.jumlah)}%"></span></span><span class="bar"><span class="b2" style="width:${pct(j.m2, j.epsa ?? j.jumlah)}%"></span></span></span>
+      <span class="p ${pct(j.lengkap, j.epsa ?? j.jumlah) >= 80 ? 'ok' : pct(j.lengkap, j.epsa ?? j.jumlah) < 50 ? 'bad' : ''}">${Math.round(pct(j.lengkap, j.epsa ?? j.jumlah))}%</span></button>`).join('');
     $('deptList').querySelectorAll('[data-j]').forEach(b => b.onclick = () => { $('fJab').value = b.dataset.j; loadStaf(); coTab('sec-staf'); });
     const opts = d.jabatan.map(j => `<option value="${esc(j.jabatan)}">${esc(j.jabatan)} (${j.jumlah})</option>`).join('');
     const cur = $('fJab').value, curL = $('lJab').value;
     $('fJab').innerHTML = `<option value="SEMUA">Semua jabatan</option>` + opts;
-    $('lJab').innerHTML = opts;
+    $('lJab').innerHTML = `<option value="SEMUA">Semua jabatan — keseluruhan HTPN (${d.jumlah})</option>` + opts;
     if (cur) $('fJab').value = cur; else if (d.jabatan[0]) $('fJab').value = d.jabatan[0].jabatan;
     if (curL) $('lJab').value = curL;
     loadStaf();
@@ -3402,6 +3438,7 @@ async function ambilStaf(jab){
   const d = await apiPost({ type:'coord_staf', pin: STATE.coPin, jabatan: jab });
   if (d.ok) CO.cache[jab] = d; return d;
 }
+function mesejKuizBK(s){ return `Salam ${s.nama}. Peringatan daripada Unit Kawalan Infeksi (UKI) HTPN: sila lengkapkan Kuiz Kesedaran IPC (WAJIB untuk staf bukan klinikal) — tonton video dan jawab kuiz di Portal Latihan IPC HTPN: ${pautanPortal()} . E-sijil dijana automatik selepas lulus. Terima kasih.`; }
 function belumTeks(s){ return !s.m1 && !s.m2 ? 'Modul 1 & Modul 2' : !s.m1 ? 'Modul 1' : 'Modul 2'; }
 function mesejPeringatan(s){
   return `Salam ${s.nama}. Peringatan daripada Unit Kawalan Infeksi (UKI) HTPN: rekod anda menunjukkan EPSA ${belumTeks(s)} (WAJIB) belum lengkap. Sila lengkapkan modul di EPSA, kemudian log masuk Portal Latihan IPC HTPN dan upload sijil anda: ${pautanPortal()} . Terima kasih.`;
@@ -3412,14 +3449,17 @@ function tapisStaf(list){
     if (jw && (s.jawatanStd || s.jawatan) !== jw) return false;
     if (q && !kunciNamaJS(s.nama).includes(q) && !kunciNamaJS(s.nama).replace(/ /g, '').includes(q.replace(/ /g, '')) && !String(s.jawatan || '').toUpperCase().includes(qr) && !String(s.jawatanStd || '').toUpperCase().includes(qr)) return false;
     if (qr.length >= 3 && $('fSt').value !== 'semua' && STATE._cariGlobal) return true;
-    if (st === 'belum') return !(s.m1 && s.m2);
-    if (st === 'belum1') return !s.m1;
-    if (st === 'belum2') return !s.m2;
-    if (st === 'lengkap') return s.m1 && s.m2;
+    if (st === 'bkBelum') return !wajibEpsaJS(s) && !s.kuiz;
+    if (st === 'bkLulus') return !wajibEpsaJS(s) && !!s.kuiz;
+    if (st === 'belum') return wajibEpsaJS(s) && !(s.m1 && s.m2);
+    if (st === 'belum1') return wajibEpsaJS(s) && !s.m1;
+    if (st === 'belum2') return wajibEpsaJS(s) && !s.m2;
+    if (st === 'lengkap') return wajibEpsaJS(s) && s.m1 && s.m2;
     if (st === 'lencana5') return s.lencana === 5;
     return true;
   });
 }
+function wajibEpsaJS(x){ return x.kategori !== 'Bukan Klinikal'; }
 function kunciNamaJS(s){ return String(s || '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\b(BIN|BINTI|BT|BTE|A P|A L)\b/g, ' ').replace(/\s+/g, ' ').trim(); }
 async function loadStaf(){
   const jab = $('fJab').value || 'SEMUA';
@@ -3434,16 +3474,17 @@ function renderStaf(){
   if (STATE._cariGlobal && !CO.cache.SEMUA){ $('stafList').innerHTML = '<div style="padding:20px;text-align:center"><span class="spinner dark"></span></div>'; ambilStaf('SEMUA').then(renderStaf).catch(() => {}); return; }
   const d = CO.cache[kunciD]; if (!d) return;
   if (!STATE._cariGlobal) isiJawatan(d.staf);
-  const list = tapisStaf(d.staf), belum = list.filter(s => !(s.m1 && s.m2));
+  const list = tapisStaf(d.staf), belum = list.filter(s => wajibEpsaJS(s) && !(s.m1 && s.m2));
   const emel = belum.filter(s => s.emel).map(s => s.emel);
-  const all = d.staf, N = all.length, b1 = all.filter(s => !s.m1).length, b2 = all.filter(s => !s.m2).length, bb = all.filter(s => !s.m1 && !s.m2).length, ok = all.filter(s => s.m1 && s.m2).length;
+  const all = d.staf.filter(wajibEpsaJS), nBK = d.staf.length - all.length, N = all.length, b1 = all.filter(s => !s.m1).length, b2 = all.filter(s => !s.m2).length, bb = all.filter(s => !s.m1 && !s.m2).length, ok = all.filter(s => s.m1 && s.m2).length;
   const pc = v => N ? Math.round(v / N * 100) : 0;
   $('stSum').innerHTML = `<div class="ss-h">📋 Ringkasan ${esc((STATE._cariGlobal || $('fJab').value === 'SEMUA') ? 'semua jabatan' : $('fJab').value)} · <b>${N}</b> staf</div>
     <div class="ss-grid">
       <div class="ss bad"><b>${b1}</b><span>belum Modul 1</span><small>${pc(N - b1)}% sudah lengkap M1</small></div>
       <div class="ss bad"><b>${b2}</b><span>belum Modul 2</span><small>${pc(N - b2)}% sudah lengkap M2</small></div>
       <div class="ss warn"><b>${bb}</b><span>belum kedua-dua</span><small>Modul 1 &amp; 2</small></div>
-      <div class="ss ok"><b>${ok}</b><span>lengkap wajib</span><small>${pc(ok)}% jabatan</small></div></div>`;
+      <div class="ss ok"><b>${ok}</b><span>lengkap wajib</span><small>${pc(ok)}% jabatan</small></div></div>
+    ${nBK ? `<p class="muted-note" style="margin:6px 0 0">🗂️ ${nBK} staf bukan klinikal tidak dikira dalam EPSA — wajib Kuiz Kesedaran IPC: <b>${d.staf.filter(x => !wajibEpsaJS(x) && x.kuiz).length}/${nBK}</b> lulus.</p>` : ''}`;
   const jabLbl = $('fJab').value === 'SEMUA' ? 'HTPN' : $('fJab').value;
   const grp = `Peringatan daripada Unit Kawalan Infeksi (UKI) HTPN — ${jabLbl}:\nStaf berikut belum lengkap EPSA Modul 1/2 (WAJIB). Sila lengkapkan di EPSA dan upload sijil melalui Portal Latihan IPC HTPN: ${pautanPortal()}\n\n` + belum.slice(0, 80).map((s, i) => `${i + 1}. ${s.nama} — belum ${belumTeks(s)}`).join('\n') + (belum.length > 80 ? `\n…dan ${belum.length - 80} lagi` : '');
   $('bulkBar').innerHTML = `<span><b>${list.length}</b> staf dipaparkan${belum.length ? ` · <b style="color:var(--coral)">${belum.length}</b> belum lengkap wajib` : ''}</span>
@@ -3451,7 +3492,12 @@ function renderStaf(){
     ${emel.length ? `<a class="btn btn-ghost btn-sm" href="mailto:?bcc=${encodeURIComponent(emel.join(','))}&subject=${encodeURIComponent('Peringatan: Lengkapkan EPSA Modul 1 & 2 (WAJIB)')}&body=${encodeURIComponent(grp)}">✉️ Emel ${emel.length} staf</a>` : ''}`;
   if (!list.length){ $('stafList').innerHTML = '<p class="muted-note" style="padding:12px 0;">Tiada staf untuk tapisan ini.</p>'; $('bMore').classList.add('hidden'); return; }
   $('stafList').innerHTML = `<div class="st-row st-head"><span>Nama / Jawatan</span><span>M1</span><span>M2</span><span>Lencana</span><span>Hubungi</span></div>` +
-    list.slice(0, CO.shown).map(s => { const ok = s.m1 && s.m2;
+    list.slice(0, CO.shown).map(s => { const bk = !wajibEpsaJS(s), ok = bk ? !!s.kuiz : s.m1 && s.m2;
+      if (bk) return `<div class="st-row">
+        <span class="st-n" onclick="bukaStaf('${esc(s.id)}')" title="Lihat / kemas kini maklumat"><b>${esc(s.nama)}</b><small>${esc(s.jawatan || s.jawatanStd)}${($('fJab').value === 'SEMUA' || STATE._cariGlobal) ? ' · <b style="display:inline;color:#1576d1">' + esc(s.jabatan) + '</b>' : ''}</small></span>
+        <span style="grid-column:span 2"><i class="mk ${s.kuiz ? 'y' : 'n'}" style="width:auto;padding:0 8px;border-radius:10px;font-size:11px">🧠 Kuiz ${s.kuiz ? '✓' : '✗'}</i></span>
+        <span class="lc ${s.lencana === 5 ? 'full' : ''}">${s.lencana}/5</span>
+        <span class="st-a">${ok ? '<span class="muted-note" style="margin:0">—</span>' : `<a class="ic-btn wa" href="${waLink(s.telefon, mesejKuizBK(s))}" target="_blank" rel="noopener" title="WhatsApp peringatan kuiz">💬</a>`}</span></div>`;
       return `<div class="st-row">
         <span class="st-n" onclick="bukaStaf('${esc(s.id)}')" title="Lihat / kemas kini maklumat"><b>${esc(s.nama)}</b><small>${esc(s.jawatan || s.jawatanStd)}${($('fJab').value === 'SEMUA' || STATE._cariGlobal) ? ' · <b style="display:inline;color:#1576d1">' + esc(s.jabatan) + '</b>' : ''}</small></span>
         <span><i class="mk ${s.m1 ? 'y' : 'n'}">${s.m1 ? '✓' : '✗'}</i></span>
@@ -3488,18 +3534,20 @@ async function simpanFail(filename, blob){
 }
 
 function binaLaporan(d){
-  const s = d.staf, N = s.length, m1 = s.filter(x => x.m1).length, m2 = s.filter(x => x.m2).length, both = s.filter(x => x.m1 && x.m2).length;
+  const bkL = d.staf.filter(x => !wajibEpsaJS(x)), s = d.staf.filter(wajibEpsaJS), N = s.length, m1 = s.filter(x => x.m1).length, m2 = s.filter(x => x.m2).length, both = s.filter(x => x.m1 && x.m2).length;
   const kini = new Date();
   const tarikh = kini.toLocaleDateString('ms-MY', { day:'numeric', month:'long', year:'numeric' });
   const masa = kini.toLocaleTimeString('ms-MY', { hour:'2-digit', minute:'2-digit' });
-  const per = {}; s.forEach(x => { const p = per[x.jawatanStd] || (per[x.jawatanStd] = { jawatan: x.jawatanStd, n: 0, m1: 0, m2: 0 }); p.n++; if (x.m1) p.m1++; if (x.m2) p.m2++; });
+  const semua = d.jabatan === 'SEMUA', kk = x => semua ? (x.jabatan || '(Tiada jabatan)') : x.jawatanStd;
+  const per = {}; s.forEach(x => { const k = kk(x), p = per[k] || (per[k] = { jawatan: k, n: 0, m1: 0, m2: 0 }); p.n++; if (x.m1) p.m1++; if (x.m2) p.m2++; });
   const jawatan = Object.values(per).sort((a, b) => b.n - a.n);
-  const belum = s.filter(x => !(x.m1 && x.m2)).sort((a, b) => (a.jawatanStd + a.nama).localeCompare(b.jawatanStd + b.nama));
-  const lengkap = s.filter(x => x.m1 && x.m2).sort((a, b) => (a.jawatanStd + a.nama).localeCompare(b.jawatanStd + b.nama));
-  return { jab: d.jabatan, hod: d.hod, emelHod: d.emelHod, N, m1, m2, both, tarikh, masa, jawatan, belum, lengkap };
+  const belum = s.filter(x => !(x.m1 && x.m2)).sort((a, b) => (kk(a) + a.jawatanStd + a.nama).localeCompare(kk(b) + b.jawatanStd + b.nama));
+  const lengkap = s.filter(x => x.m1 && x.m2).sort((a, b) => (kk(a) + a.jawatanStd + a.nama).localeCompare(kk(b) + b.jawatanStd + b.nama));
+  return { bkN: bkL.length, bkLulus: bkL.filter(x => x.kuiz).length, semua, pecah: semua ? 'JABATAN' : 'JAWATAN', pecahKol: semua ? 'Jabatan' : 'Jawatan', jab: semua ? 'Semua Jabatan HTPN' : d.jabatan, hod: semua ? '' : d.hod, emelHod: semua ? '' : d.emelHod, N, m1, m2, both, tarikh, masa, jawatan, belum, lengkap };
 }
 
 // senarai nama ikut pilihan: belum / lengkap / kedua
+function jwLap(L, x){ return (x.jawatan || x.jawatanStd || '') + (L.semua && x.jabatan ? ' · ' + x.jabatan : ''); }
 function senaraiLap(L){
   const m = $('lSen') ? $('lSen').value : 'belum', out = [];
   if (m !== 'lengkap') out.push({ tajuk:`SENARAI STAF BELUM LENGKAP EPSA MODUL 1 & 2 (${L.belum.length} staf)`, list:L.belum, kosong:'Tiada — semua staf telah lengkap. Tahniah!', hijau:false });
@@ -3518,12 +3566,13 @@ function renderLaporan(L){
       <tr><td>Modul 2 — Kebersihan Tangan</td><td><b class="${cls(pct(L.m2, L.N))}">${pct(L.m2, L.N)}%</b> (${L.m2}/${L.N} staf)</td><td>M2 Baki Belum Lengkap</td><td><b>${L.N - L.m2} staf</b></td></tr>
       <tr><td>Lengkap Modul 1 &amp; 2</td><td><b class="${cls(pct(L.both, L.N))}">${pct(L.both, L.N)}%</b> (${L.both}/${L.N} staf)</td><td>Belum lengkap wajib</td><td><b>${L.belum.length} staf</b></td></tr>
     </tbody></table>
-    <table class="rp-t"><thead><tr><th colspan="4">PECAHAN MENGIKUT JAWATAN — ${esc(L.jab.toUpperCase())}</th></tr><tr class="sub"><td>Jawatan</td><td>Bil. Staf</td><td>M1 Selesai</td><td>M2 Selesai</td></tr></thead><tbody>
+    <table class="rp-t"><thead><tr><th colspan="4">PECAHAN MENGIKUT ${L.pecah} — ${esc(L.jab.toUpperCase())}</th></tr><tr class="sub"><td>${L.pecahKol}</td><td>Bil. Staf</td><td>M1 Selesai</td><td>M2 Selesai</td></tr></thead><tbody>
       ${L.jawatan.map(j => `<tr><td>${esc(j.jawatan)}</td><td>${j.n}</td><td>${j.m1}</td><td>${j.m2}</td></tr>`).join('')}
     </tbody></table>
     ${senaraiLap(L).map(S => `<table class="rp-t rp-list ${S.hijau ? 'rp-ok' : ''}"><thead><tr><th colspan="5">${esc(S.tajuk)}</th></tr><tr class="sub"><td>Bil</td><td>Nama</td><td>Jawatan</td><td>M1</td><td>M2</td></tr></thead><tbody>
-      ${S.list.length ? S.list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.nama)}</td><td>${esc(x.jawatan || x.jawatanStd)}</td><td class="${x.m1 ? 'y' : 'n'}">${x.m1 ? '✓' : '✗'}</td><td class="${x.m2 ? 'y' : 'n'}">${x.m2 ? '✓' : '✗'}</td></tr>`).join('') : `<tr><td colspan="5">${S.kosong}</td></tr>`}
+      ${S.list.length ? S.list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.nama)}</td><td>${esc(jwLap(L, x))}</td><td class="${x.m1 ? 'y' : 'n'}">${x.m1 ? '✓' : '✗'}</td><td class="${x.m2 ? 'y' : 'n'}">${x.m2 ? '✓' : '✗'}</td></tr>`).join('') : `<tr><td colspan="5">${S.kosong}</td></tr>`}
     </tbody></table>`).join('')}
+    ${L.bkN ? `<div class="rp-note" style="color:#0e5f66"><b>Staf bukan klinikal:</b> ${L.bkN} staf tidak dikira dalam pematuhan EPSA (tidak wajib). Kuiz Kesedaran IPC: ${L.bkLulus}/${L.bkN} lulus.</div>` : ''}
     <div class="rp-note"><b>Nota:</b> Data daripada Portal Latihan IPC HTPN (rekod sijil EPSA). ${L.belum.length ? `<span>Tindakan diperlukan: ${L.N - L.m1} staf belum lengkap M1, ${L.N - L.m2} staf belum lengkap M2. Mohon Ketua Jabatan memastikan staf melengkapkan modul dan memuat naik sijil melalui portal.</span>` : ''}</div>
     <div class="rp-foot">Portal Latihan IPC HTPN | Unit Kawalan Infeksi | Dijana: ${esc(L.tarikh)} ${esc(L.masa)}</div>`;
   $('lapNote').innerHTML = L.emelHod ? `Emel HOD: <b>${esc(L.emelHod)}</b>. Muat turun PDF/Word dahulu, kemudian lampirkan dalam emel.` : 'Emel HOD belum diisi untuk jabatan ini (tab <b>Jabatan</b> dalam Excel). Muat turun laporan dahulu, kemudian lampirkan dalam emel.';
@@ -3561,11 +3610,11 @@ $('bPdf').onclick = async () => {
              ['Lengkap Modul 1 & 2', `${pct(L.both, L.N)}% (${L.both}/${L.N} staf)`, 'Belum lengkap wajib', `${L.belum.length} staf`]],
       columnStyles: { 1: { fontStyle:'bold' }, 3: { fontStyle:'bold' } } });
     doc.autoTable({ startY: doc.lastAutoTable.finalY + 5, theme:'grid', styles:{ fontSize: 9, cellPadding: 2 }, headStyles: head(),
-      head: [[{ content: 'PECAHAN MENGIKUT JAWATAN — ' + L.jab.toUpperCase(), colSpan: 4 }], ['Jawatan', 'Bil. Staf', 'M1 Selesai', 'M2 Selesai']],
+      head: [[{ content: `PECAHAN MENGIKUT ${L.pecah} — ` + L.jab.toUpperCase(), colSpan: 4 }], [L.pecahKol, 'Bil. Staf', 'M1 Selesai', 'M2 Selesai']],
       body: L.jawatan.map(j => [j.jawatan, j.n, j.m1, j.m2]) });
     senaraiLap(L).forEach(S => doc.autoTable({ startY: doc.lastAutoTable.finalY + 5, theme:'grid', styles:{ fontSize: 8.5, cellPadding: 1.8 }, headStyles: S.hijau ? { fillColor:[11,138,99], textColor:255, fontStyle:'bold', fontSize:9 } : head(),
       head: [[{ content: S.tajuk, colSpan: 5 }], ['Bil', 'Nama', 'Jawatan', 'M1', 'M2']],
-      body: S.list.length ? S.list.map((x, i) => [i + 1, x.nama, x.jawatan || x.jawatanStd, x.m1 ? 'Ya' : 'Belum', x.m2 ? 'Ya' : 'Belum']) : [[{ content: S.kosong, colSpan:5 }]],
+      body: S.list.length ? S.list.map((x, i) => [i + 1, x.nama, jwLap(L, x), x.m1 ? 'Ya' : 'Belum', x.m2 ? 'Ya' : 'Belum']) : [[{ content: S.kosong, colSpan:5 }]],
       columnStyles: { 0: { cellWidth: 10 }, 3: { cellWidth: 16, halign:'center' }, 4: { cellWidth: 16, halign:'center' } },
       didParseCell: (h) => { if (h.section === 'body' && (h.column.index === 3 || h.column.index === 4)) h.cell.styles.textColor = h.cell.raw === 'Ya' ? [11,138,99] : [179,38,30]; } }));
     let y = doc.lastAutoTable.finalY + 6; if (y > 270){ doc.addPage(); y = 20; }
@@ -3597,10 +3646,10 @@ $('bWord').onclick = async () => {
           ['Modul 2 — Kebersihan Tangan', `${pct(L.m2, L.N)}% (${L.m2}/${L.N} staf)`, 'M2 Baki Belum Lengkap', `${L.N - L.m2} staf`],
           ['Lengkap Modul 1 & 2', `${pct(L.both, L.N)}% (${L.both}/${L.N} staf)`, 'Belum lengkap wajib', `${L.belum.length} staf`]]
         .map(r => new D.TableRow({ children: r.map((c, i) => cell(c, { bold: i % 2 === 1, w: [2700, 1800, 2700, 1800][i] })) }))], [2700, 1800, 2700, 1800]);
-    const jaw = table([hdr('PECAHAN MENGIKUT JAWATAN — ' + L.jab.toUpperCase(), 4), sub(['Jawatan', 'Bil. Staf', 'M1 Selesai', 'M2 Selesai']),
+    const jaw = table([hdr(`PECAHAN MENGIKUT ${L.pecah} — ` + L.jab.toUpperCase(), 4), sub([L.pecahKol, 'Bil. Staf', 'M1 Selesai', 'M2 Selesai']),
       ...L.jawatan.map(j => new D.TableRow({ children:[ cell(j.jawatan, { w: 4200 }), cell(j.n, { w: 1600 }), cell(j.m1, { w: 1600 }), cell(j.m2, { w: 1600 }) ] }))], [4200, 1600, 1600, 1600]);
     const lst = senaraiLap(L).flatMap(S => [table([S.hijau ? new D.TableRow({ children:[ cell(S.tajuk, { span: 5, fill:'0B8A63', color:'FFFFFF', bold:true }) ] }) : hdr(S.tajuk, 5), sub(['Bil', 'Nama', 'Jawatan', 'M1', 'M2']),
-      ...(S.list.length ? S.list.map((x, i) => new D.TableRow({ children:[ cell(i + 1, { w: 600 }), cell(x.nama, { w: 3900 }), cell(x.jawatan || x.jawatanStd, { w: 2900 }),
+      ...(S.list.length ? S.list.map((x, i) => new D.TableRow({ children:[ cell(i + 1, { w: 600 }), cell(x.nama, { w: 3900 }), cell(jwLap(L, x), { w: 2900 }),
         cell(x.m1 ? 'Ya' : 'Belum', { w: 800, color: x.m1 ? '0B8A63' : 'B3261E', bold: true }), cell(x.m2 ? 'Ya' : 'Belum', { w: 800, color: x.m2 ? '0B8A63' : 'B3261E', bold: true }) ] }))
         : [new D.TableRow({ children:[ cell(S.kosong, { span: 5 }) ] })])], [600, 3900, 2900, 800, 800]), P('', { after: 160 })]);
     const doc = new D.Document({ sections:[{ properties:{ page:{ size:{ width: 11906, height: 16838 }, margin:{ top: 1000, bottom: 1000, left: 1100, right: 1100 } } },
@@ -3975,8 +4024,8 @@ async function loadLiaisonDash(){
   $('ljKpi').innerHTML = '<span class="spinner dark"></span>'; $('ljJaw').innerHTML = '';
   let d; try { d = await ambilStaf(STATE.coJab); } catch(e){}
   if (!d || !d.ok){ $('ljKpi').innerHTML = '<p class="muted-note">Gagal muat data.</p>'; return; }
-  const L = d.staf, N = L.length, m1 = L.filter(s => s.m1).length, m2 = L.filter(s => s.m2).length, ok = L.filter(s => s.m1 && s.m2).length, l5 = L.filter(s => s.lencana === 5).length;
-  $('ljKpi').innerHTML = [[N, 'Jumlah staf', ''], [pct(m1, N) + '%', `Modul 1 · ${m1} staf`, 'acc'], [pct(m2, N) + '%', `Modul 2 · ${m2} staf`, 'acc'], [pct(ok, N) + '%', `Lengkap wajib · ${N - ok} belum`, 'acc'], [l5, 'Dapat 5 lencana', 'gold']]
+  const L = d.staf.filter(wajibEpsaJS), LB = d.staf.filter(x => !wajibEpsaJS(x)), N = L.length, m1 = L.filter(s => s.m1).length, m2 = L.filter(s => s.m2).length, ok = L.filter(s => s.m1 && s.m2).length, l5 = L.filter(s => s.lencana === 5).length;
+  $('ljKpi').innerHTML = [[N, 'Jumlah staf', ''], [pct(m1, N) + '%', `Modul 1 · ${m1} staf`, 'acc'], [pct(m2, N) + '%', `Modul 2 · ${m2} staf`, 'acc'], [pct(ok, N) + '%', `Lengkap wajib · ${N - ok} belum`, 'acc'], [l5, 'Dapat 5 lencana', 'gold']].concat(LB.length ? [[LB.filter(x => x.kuiz).length + '/' + LB.length, '🧠 Kuiz bukan klinikal lulus', 'acc']] : [])
     .map(([v, l, c]) => `<div class="kpi ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
   const g = {}; L.forEach(s => { const k = s.jawatanStd || s.jawatan || 'Lain-lain'; (g[k] = g[k] || []).push(s); });
   $('ljJaw').innerHTML = Object.entries(g).sort((a, b) => b[1].length - a[1].length).map(([j, A]) => { const n = A.length, a1 = A.filter(s => s.m1).length, a2 = A.filter(s => s.m2).length, ak = A.filter(s => s.m1 && s.m2).length, p = Math.round(pct(ak, n));
@@ -3984,7 +4033,7 @@ async function loadLiaisonDash(){
       <span class="bar2"><span class="bar"><span class="b1" style="width:${pct(a1, n)}%"></span></span><span class="bar"><span class="b2" style="width:${pct(a2, n)}%"></span></span></span>
       <span style="text-align:right;font-weight:800;color:${p >= 80 ? '#0b8a63' : p < 50 ? '#c9302c' : 'var(--navy)'}">${p}%</span></button>`; }).join('');
   renderStaf();
-  $('ljJaw').querySelectorAll('[data-jw]').forEach(b => b.onclick = () => { isiJawatan(L); $('fJaw').value = b.dataset.jw; $('fSt').value = 'semua'; coTab('sec-staf'); CO.shown = 50; renderStaf(); });
+  $('ljJaw').querySelectorAll('[data-jw]').forEach(b => b.onclick = () => { isiJawatan(d.staf); $('fJaw').value = b.dataset.jw; $('fSt').value = 'semua'; coTab('sec-staf'); CO.shown = 50; renderStaf(); });
 }
 function isiJawatan(L){
   const cur = $('fJaw').value, js = [...new Set(L.map(s => s.jawatanStd || s.jawatan).filter(Boolean))].sort();
@@ -4106,13 +4155,15 @@ function renderCoRef(){
   $('coRefNota').innerHTML = kz ? `<div class="kz-nota">🧠 <b>Langkah 1 Kuiz Kesedaran IPC (staf bukan klinikal)</b> — staf mesti tonton bahan di bawah ikut turutan (▲ ▼ untuk susun) sebelum kuiz dibuka, kemudian dapat e-sijil bertandatangan Ketua UKI.<br>
       • <b>Video</b> (YouTube / Google Drive) mesti ditonton hingga habis — <b>tidak boleh dilangkau</b>.<br>
       • Soalan kuiz diedit di tab <b>Soalan Permainan → 🧠 Kuiz Bukan Klinikal</b>.<br>
-      ${list.length ? `Turutan semasa: <b>${list.length} bahan</b>.` : 'Belum ada video — sementara itu staf nampak <b>23 slaid asal</b>.'}</div>` : '';
+      ${list.length ? `Turutan semasa: <b>${list.length} bahan</b>.` : 'Belum ada video — sementara itu staf nampak <b>23 slaid asal</b>.'}<br>
+      ➕ <b>Cara tambah:</b> di atas, pilih Jenis <b>🧠 Bahan Kuiz Bukan Klinikal</b> → tampal pautan video → <b>＋ Tambah</b>. Video yang tersilap masuk ke tab 🎬 Video boleh dipindah dengan butang <b>🧠 Jadikan bahan kuiz</b>.</div>` : '';
   g.innerHTML = list.length ? list.map((x, i) => `<div class="ref-item">${kz ? `<span class="kz-no">${i + 1}</span>` : ''}<a href="${esc(x.pautan)}" target="_blank" rel="noopener" style="text-decoration:none">
       <div class="ri-th">${thumbUrl(x) ? `<img src="${esc(thumbUrl(x))}" alt="" loading="lazy">` : `<span class="rc-ph">${kz ? '🧠' : '📄'}</span>`}</div><div class="ri-t">${esc(x.tajuk)}</div></a>
       ${kz ? `<div class="kz-alih"><button type="button" ${i === 0 ? 'disabled' : ''} onclick="alihRef('${esc(x.id)}',-1,this)" aria-label="Naik">▲</button><button type="button" ${i === list.length - 1 ? 'disabled' : ''} onclick="alihRef('${esc(x.id)}',1,this)" aria-label="Turun">▼</button></div>` : ''}
+      ${!kz && CREF.tab === 'Video' ? `<button class="ri-mv" onclick="jadiKuiz('${esc(x.id)}', this)">🧠 Jadikan bahan kuiz</button>` : ''}
       <button class="ri-del" onclick="padamRef('${esc(x.id)}', this)">Padam</button></div>`).join('') : '<p class="muted-note">Belum ada bahan dalam kategori ini.</p>';
 }
-document.querySelectorAll('[data-crt]').forEach(b => b.onclick = () => { CREF.tab = b.dataset.crt; renderCoRef(); });
+document.querySelectorAll('[data-crt]').forEach(b => b.onclick = () => { CREF.tab = b.dataset.crt; $('rJenis').value = CREF.tab; $('rJenis').dispatchEvent(new Event('change')); renderCoRef(); });
 $('rJenis').addEventListener('change', () => { const v = $('rJenis').value === 'Video', k = $('rJenis').value === 'Kuiz';
   $('rPautanL').textContent = k ? 'Pautan Google Slides / Google Drive (slaid, PDF, video) atau YouTube' : v ? 'Pautan video (YouTube atau Google Drive)' : 'Pautan Google Drive';
   $('rPautan').placeholder = k ? 'https://docs.google.com/presentation/d/…  ·  https://drive.google.com/file/d/…  ·  https://youtu.be/…' : v ? 'https://youtu.be/…  atau  https://drive.google.com/file/d/…/view' : 'https://docs.google.com/presentation/d/… atau https://drive.google.com/file/d/…';
@@ -4134,6 +4185,14 @@ async function alihRef(id, arah, btn){
   try { const d = await apiPost({ type:'coord_rujukan_alih', pin: STATE.coPin, id, jenis: CREF.tab, arah });
     if (!d.ok){ toast(d.error); return; }
     const a = REF.items.indexOf(L[k]), b = REF.items.indexOf(L[j]); [REF.items[a], REF.items[b]] = [REF.items[b], REF.items[a]]; renderCoRef();
+  } catch(e){ toast('Gagal sambung ke pelayan.'); } finally { busy(btn, false); }
+}
+async function jadiKuiz(id, btn){
+  busy(btn, true, '…');
+  try { const d = await apiPost({ type:'coord_rujukan_jenis', pin: STATE.coPin, id, jenis:'Kuiz' });
+    if (!d.ok){ toast(d.error); return; }
+    const x = REF.items.find(i => i.id === id); if (x) x.jenis = 'Kuiz'; CREF.tab = 'Kuiz'; $('rJenis').value = 'Kuiz'; $('rJenis').dispatchEvent(new Event('change')); renderCoRef(); renderRefCards();
+    toast('✓ Dipindah ke Bahan Kuiz Bukan Klinikal');
   } catch(e){ toast('Gagal sambung ke pelayan.'); } finally { busy(btn, false); }
 }
 async function padamRef(id, btn){
@@ -4406,6 +4465,8 @@ const I18N_EN = {
   'Tonton video':'Watch video', '🎬 Tonton semula':'🎬 Watch again',
   'Jawab kuiz':'Answer the quiz', 'Tonton video kesedaran IPC hingga habis, kemudian jawab kuiz. E-sijil dijana automatik.':'Watch the IPC awareness video to the end, then answer the quiz. An e-certificate is generated automatically.', 'Kuiz Bukan Klinikal':'Non-clinical Quiz', 'Tamat Pratonton':'End Preview',
   'Tinggal':'Only', 'peringkat lagi untuk dapatkan lencana':'more stage(s) to earn the badge', '✓ Lencana diperoleh':'✓ Badge earned',
+  '📜 E-Sijil Saya':'📜 My E-Certificate', '🔁 Jawab Semula (soalan diacak)':'🔁 Try Again (questions shuffled)', '📥 Muat Turun E-Sijil (PNG)':'📥 Download E-Certificate (PNG)', '📜 E-Sijil':'📜 E-Certificate',
+  '📜 E-sijil disimpan dalam portal — boleh dibuka semula bila-bila masa melalui butang':'📜 Your e-certificate is saved in the portal — open it again anytime with the button', 'E-Sijil Saya':'My E-Certificate', 'di dashboard.':'on the dashboard.',
   // Bahan rujukan
   '📚 Bahan Rujukan Kawalan Infeksi':'📚 Infection Control Reference Materials', '📊 Slaid Rujukan':'📊 Reference Slides', '🖼️ Poster Edukasi':'🖼️ Educational Posters', '🎬 Video Latihan':'🎬 Training Videos',
   '📂 Buka folder slaid penuh di Google Drive':'📂 Open the full slides folder in Google Drive', 'Belum ada bahan':'No materials yet', 'Belum ada bahan dalam kategori ini.':'No materials in this category yet.',
@@ -4481,6 +4542,7 @@ const I18N_RX = [
   [/^🔥 Streak terbaik: (\d+)$/, '🔥 Best streak: $1'], [/^❤️ Baki nyawa: (.+)$/, '❤️ Lives left: $1'], [/^🔥 (\d+) berturut-turut! \+(\d+)$/, '🔥 $1 in a row! +$2'],
   [/^✓ Langkah (\d+):/, '✓ Step $1:'], [/^Modul (\d+) · (WAJIB|Pilihan)$/, (m, n, w) => 'Module ' + n + ' · ' + (w === 'WAJIB' ? 'MANDATORY' : 'Optional')],
   [/^(\d+) bintang$/, '$1 star(s)'],
+  [/^Perlukan sekurang-kurangnya (\d+)\/(\d+)\. Jawab semula — soalan & pilihan jawapan akan diacak\. Tidak perlu tonton video semula\.$/, 'You need at least $1/$2. Try again — the questions and answer choices will be shuffled. No need to rewatch the video.'],
   [/^🏁 Peringkat (\d+)\/(\d+) lulus$/, '🏁 Stage $1/$2 passed'], [/^▶ Main Peringkat (\d+)$/, '▶ Play Stage $1'], [/^Peringkat (\d+)( · .+)?$/, 'Stage $1$2'],
   [/^▶ Peringkat (\d+)(.*)$/, '▶ Stage $1$2'], [/^(.+) · Peringkat (\d+)( · .+)?$/, '$1 · Stage $2$3'], [/^Peringkat (\d+)(.*) lulus! 🎉$/, 'Stage $1$2 passed! 🎉'],
   [/^Perlukan sekurang-kurangnya (\d+)\/(\d+)\. Tonton semula video dan cuba lagi\.$/, 'You need at least $1/$2. Watch the video again and try again.'],
