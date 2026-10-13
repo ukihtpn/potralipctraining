@@ -649,7 +649,7 @@
     #v-dash > #pModul{ order:3; } #v-dash > #pLencana{ order:4; } #v-dash > #pBahan{ order:5; }
     /* staf bukan klinikal: kad Kuiz terus di bawah profil */
     body.st-bk #v-dash > .dash-top{ display:contents; }
-    body.st-bk #v-dash .d-prof{ order:-4; } body.st-bk #v-dash .d-notes{ order:-3; } body.st-bk #v-dash > #cKuiz{ order:-2; } body.st-bk #v-dash .d-scene{ order:0; }
+    body.st-bk #v-dash .d-prof{ order:-4; } body.st-bk #v-dash .d-notes{ order:-3; } body.st-bk #v-dash #cKuiz{ order:-2; } body.st-bk #v-dash .d-scene{ order:0; }
   }
   .cta-row{ display:grid; grid-template-columns:1fr 1.4fr 0.8fr; gap:10px; align-items:center; margin-top:16px; }
   .cta-gift{ width:100%; border-radius:16px; }
@@ -1177,6 +1177,60 @@
   .kz-rem{ position:relative; z-index:1; margin-top:12px; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.4); border-radius:12px; padding:9px 12px; font-size:13.5px; font-weight:600; }
   .kz-card.kz-belum .kz-steps span b{ color:#b3261e; } .kz-card.kz-ok .kz-steps span b{ color:#0b7a4b; }
   .ri-mv.warn{ background:#fff4e5; border-color:#f3c98b; color:#9a5b00; }
+
+  /* ===== Kad Mandatory Training Module (reka bentuk baharu) ===== */
+  .kz-card{ border-radius:22px !important; padding:20px 20px 18px !important; }
+  .kz-card::before{ content:""; position:absolute; right:-60px; bottom:-70px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,.08); }
+  .kz-top{ align-items:center; }
+  .kz-ic{ position:relative; width:86px !important; height:86px !important; border-radius:24px !important; background:#fff; padding:4px; overflow:visible; box-shadow:0 6px 14px rgba(0,0,0,.18) !important; }
+  .kz-ic img{ width:100%; height:100%; object-fit:contain; border-radius:20px; display:block; }
+  .kz-spark{ position:absolute; top:-12px; right:-14px; width:26px; height:26px; }
+  .kz-spark::before, .kz-spark::after{ content:""; position:absolute; background:#ffcf33; border-radius:3px; }
+  .kz-spark::before{ width:4px; height:12px; left:6px; top:2px; transform:rotate(25deg); }
+  .kz-spark::after{ width:12px; height:4px; left:10px; top:16px; transform:rotate(-20deg); }
+  .kz-hd{ flex:1; min-width:0; }
+  .kz-card .kz-tag{ background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35); font-size:11px; padding:4px 11px; }
+  .kz-card h3{ font-size:24px !important; font-weight:800; margin:6px 0 2px !important; line-height:1.15; letter-spacing:-.01em; }
+  .kz-card .kz-h2{ font-size:15px; font-weight:600; opacity:.95; margin:0 0 4px; }
+  .kz-card .sub{ font-size:13.5px !important; line-height:1.45; }
+  .kz-st{ align-self:flex-start; font-size:12.5px !important; padding:7px 14px !important; border-radius:22px !important; box-shadow:0 3px 8px rgba(0,0,0,.12); }
+  .kz-rem{ display:flex; align-items:center; gap:12px; margin-top:14px !important; padding:12px 14px !important; background:rgba(255,255,255,.14) !important; border:1px solid rgba(255,255,255,.45) !important; border-radius:16px !important; font-size:14px !important; line-height:1.4; }
+  .kz-rem-ic{ flex:0 0 auto; width:38px; height:38px; display:none; } .kz-rem-ic svg{ width:100%; height:100%; }
+  .kz-card.kz-belum .kz-ic-warn, .kz-card.kz-ok .kz-ic-ok{ display:block; }
+  .kz-steps2{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; margin:14px 0 16px !important; }
+  .kz-steps2 > i{ font-style:normal; font-weight:800; font-size:20px; opacity:.9; flex:0 0 auto; }
+  .kz-stp{ flex:1 1 0; min-width:0; display:flex; align-items:center; gap:9px; background:#fff; border-radius:16px; padding:9px 10px; box-shadow:0 4px 10px rgba(0,0,0,.12); }
+  .kz-si{ flex:0 0 auto; width:38px; height:38px; border-radius:50%; display:grid; place-items:center; } .kz-si svg{ width:24px; height:24px; }
+  .kz-si.c1{ background:#e5372c; } .kz-si.c2{ background:#1f6fd1; } .kz-si.c3{ background:#1d9d5c; }
+  .kz-stp > span:last-child{ display:flex; flex-direction:column; align-items:flex-start; min-width:0; }
+  .kz-stp b{ display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#d93a2f; color:#fff; font-size:11.5px; font-weight:800; margin-bottom:2px; }
+  .kz-stp em{ font-style:normal; font-weight:700; font-size:13px; color:#c0281f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .kz-card.kz-ok .kz-stp b{ background:#14a36a; } .kz-card.kz-ok .kz-stp em{ color:#0b7a4b; }
+  .kz-start{ position:relative; min-width:200px !important; font-size:17px !important; padding:13px 26px !important; border-radius:30px !important; }
+  .kz-start::after{ content:""; position:absolute; right:-16px; top:-10px; width:4px; height:12px; background:#ffcf33; border-radius:3px; transform:rotate(30deg); box-shadow:8px 8px 0 -0px #ffcf33; }
+  @media (max-width:600px){
+    .kz-card h3{ font-size:20px !important; } .kz-ic{ width:70px !important; height:70px !important; }
+    .kz-steps2{ gap:5px; } .kz-stp{ flex-direction:column; text-align:center; padding:8px 4px; gap:5px; } .kz-stp > span:last-child{ align-items:center; }
+    .kz-stp em{ font-size:11.5px; white-space:normal; } .kz-si{ width:34px; height:34px; } .kz-steps2 > i{ font-size:15px; }
+    .kz-start{ width:100%; }
+  }
+  /* maskot tidak terpotong bila kad kuiz lebih tinggi (desktop) */
+  @media (min-width:721px){ body.st-bk .d-scene{ display:flex; align-items:center; background:none; box-shadow:none; border-radius:0; overflow:visible; } body.st-bk .d-scene img{ height:auto; object-fit:contain; border-radius:20px; box-shadow:0 6px 18px rgba(11,74,143,0.15); } }
+
+  .kz-row1{ display:flex; justify-content:space-between; align-items:center; gap:10px; position:relative; z-index:1; margin-bottom:10px; }
+  .kz-row1 .kz-st{ margin-left:0; }
+  .kz-top{ gap:16px !important; }
+  .kz-stp em{ white-space:normal !important; line-height:1.2; }
+  .kz-stp{ padding:9px 8px !important; }
+  @media (max-width:600px){ .kz-top{ align-items:flex-start !important; } .kz-ic{ width:64px !important; height:64px !important; border-radius:18px !important; } .kz-card .kz-tag{ font-size:10px; } .kz-row1 .kz-st{ font-size:11px !important; padding:6px 10px !important; } }
+
+  .kz-card .kz-steps2 span{ background:none; border:0; padding:0; border-radius:0; font-size:inherit; }
+  .kz-card .kz-steps2 .kz-si{ width:38px; height:38px; border-radius:50%; }
+  .kz-card .kz-steps2 .kz-si.c1{ background:#e5372c; } .kz-card .kz-steps2 .kz-si.c2{ background:#1f6fd1; } .kz-card .kz-steps2 .kz-si.c3{ background:#1d9d5c; }
+  .kz-card .kz-stp b{ background:#d93a2f !important; color:#fff !important; margin:0 0 3px !important; }
+  .kz-card.kz-ok .kz-stp b{ background:#14a36a !important; }
+  .kz-card .kz-stp em{ display:block; overflow:visible; text-overflow:clip; white-space:normal; }
+  @media (max-width:600px){ .kz-card .kz-steps2 .kz-si{ width:34px; height:34px; } }
 </style>
 </head>
 <body>
@@ -1330,12 +1384,17 @@
           <button class="btn-pill sky" id="bUpWajib">☁️ Muat Naik Sijil</button>
         </div>
       <div class="card kz-card hidden" id="cKuiz">
-        <div class="kz-top"><div class="kz-ic" aria-hidden="true">🧠</div>
-          <div><span class="kz-tag">WAJIB · BUKAN KLINIKAL</span><h3>Mandatory Training Module</h3><p class="kz-h2">Kuiz Kesedaran IPC</p><p class="sub" id="kuizSub"></p></div>
-          <span class="kz-st" id="kuizSt"></span></div>
-        <div class="kz-rem" id="kuizRem"></div>
-        <div class="kz-steps"><span id="kzStep1">📖 <b>1</b> Baca slaid</span><i>›</i><span>🎮 <b>2</b> Jawab kuiz</span><i>›</i><span>📜 <b>3</b> E-sijil</span></div>
-        <div class="kz-btns"><button class="btn-pill gold kz-go" type="button" onclick="go('v-kuiz')">▶ Mula</button><button class="btn-pill kz-go hidden" id="kzSijil" type="button" onclick="bukaSijilKuiz()">📜 E-Sijil Saya</button></div>
+        <div class="kz-row1"><span class="kz-tag">WAJIB · BUKAN KLINIKAL</span><span class="kz-st" id="kuizSt"></span></div>
+        <div class="kz-top">
+          <div class="kz-ic"><img src="data:image/jpeg;base64,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" alt=""><i class="kz-spark s1"></i></div>
+          <div class="kz-hd"><h3>Mandatory Training Module</h3><p class="kz-h2">Kuiz Kesedaran IPC</p><p class="sub" id="kuizSub"></p></div></div>
+        <div class="kz-rem"><span class="kz-rem-ic kz-ic-warn"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 45 42H3z" fill="#ffd23f" stroke="#f2b705" stroke-width="2" stroke-linejoin="round"/><rect x="21.8" y="16" width="4.4" height="14" rx="2.2" fill="#2b2b2b"/><circle cx="24" cy="35.5" r="2.6" fill="#2b2b2b"/></svg></span><span class="kz-rem-ic kz-ic-ok"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#fff"/><path d="M14 24.5l7 7 13-14" stroke="#14a36a" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span id="kuizRem"></span></div>
+        <div class="kz-steps kz-steps2">
+          <div class="kz-stp"><span class="kz-si c1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7.5v9l7.5-4.5z" fill="#fff"/></svg></span><span><b>1</b><em id="kzStep1">Tonton video</em></span></div><i>›</i>
+          <div class="kz-stp"><span class="kz-si c2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="15" rx="2" fill="#fff"/><rect x="9" y="3.5" width="6" height="3" rx="1" fill="#cfe3ff"/><path d="M8.5 10l1 1 2-2M8.5 14.5l1 1 2-2" stroke="#1f6fd1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 10.3h3M13 14.8h3" stroke="#1f6fd1" stroke-width="1.5" stroke-linecap="round"/></svg></span><span><b>2</b><em>Jawab kuiz</em></span></div><i>›</i>
+          <div class="kz-stp"><span class="kz-si c3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h7l4 4v12H7z" fill="#fff"/><path d="M9.5 10h6M9.5 12.8h6M9.5 15.6h3.5" stroke="#1d9d5c" stroke-width="1.4" stroke-linecap="round"/><circle cx="16.3" cy="17.2" r="2.2" fill="#1d9d5c"/><path d="M15.3 19l-.4 2.2 1.4-.8 1.4.8-.4-2.2" fill="#1d9d5c"/></svg></span><span><b>3</b><em>E-sijil</em></span></div>
+        </div>
+        <div class="kz-btns"><button class="btn-pill gold kz-go kz-start" type="button" onclick="go('v-kuiz')">▶ Mula</button><button class="btn-pill kz-go hidden" id="kzSijil" type="button" onclick="bukaSijilKuiz()">📜 E-Sijil Saya</button></div>
       </div>
 
       <div class="jom d-jom" id="cJom">
@@ -2111,9 +2170,9 @@ function renderDashboard(){
   $('kuizSub').innerHTML = p.kuizBukanKlinikal ? `✓ Lulus — ${esc(p.kuizBukanKlinikal)}. Boleh ulang untuk ulang kaji.` : 'Baca slaid kesedaran IPC dan jawab 8 soalan (lulus 5/8). E-sijil dijana automatik.';
   $('kuizSt').textContent = p.kuizBukanKlinikal ? '✓ LENGKAP' : 'BELUM LENGKAP'; $('kuizSt').classList.toggle('ok', !!p.kuizBukanKlinikal); kemasKadKuiz();
   $('cKuiz').classList.toggle('kz-ok', !!p.kuizBukanKlinikal); $('cKuiz').classList.toggle('kz-belum', !p.kuizBukanKlinikal);
-  $('kuizRem').innerHTML = p.kuizBukanKlinikal ? '✅ Anda telah <b>LENGKAP</b> Mandatory Training Module.' : '⚠️ Anda <b>BELUM LENGKAP</b> Mandatory Training Module — tonton video & jawab kuiz sekarang.';
+  $('kuizRem').innerHTML = p.kuizBukanKlinikal ? 'Anda telah <b>LENGKAP</b> Mandatory Training Module.' : 'Anda <b>BELUM LENGKAP</b> Mandatory Training Module — tonton video &amp; jawab kuiz sekarang.';
   $('kzSijil').classList.toggle('hidden', !p.kuizBukanKlinikal);
-  const kzB = document.querySelector('#cKuiz .kz-btns .gold'); if (kzB) kzB.textContent = p.kuizBukanKlinikal ? '🔁 Ulang Kaji' : '▶ Mula';
+  const kzB = document.querySelector('#cKuiz .kz-start'); if (kzB) kzB.textContent = p.kuizBukanKlinikal ? '🔁 Ulang Kaji' : '▶ Mula';
   renderProgress();
   renderBadges();
 }
@@ -3020,9 +3079,8 @@ function muatRujukan(force){
 }
 function kemasKadKuiz(){
   const ada = (REF.items || []).some(x => x.jenis === 'Kuiz'), p = STATE.profil;
-  if ($('kzStep1')) $('kzStep1').innerHTML = ada ? '🎬 <b>1</b> Tonton video' : '📖 <b>1</b> Baca slaid';
+  if ($('kzStep1')) $('kzStep1').textContent = ada ? 'Tonton video' : 'Baca slaid';
   if (p && !p.kuizBukanKlinikal && $('kuizSub')) $('kuizSub').textContent = ada ? 'Tonton video kesedaran IPC hingga habis, kemudian jawab kuiz. E-sijil dijana automatik.' : 'Baca slaid kesedaran IPC dan jawab 8 soalan (lulus 5/8). E-sijil dijana automatik.';
-  const s2 = document.querySelectorAll('.kz-steps span')[1]; if (s2) s2.innerHTML = '🎮 <b>2</b> Jawab kuiz';
 }
 function renderRefCards(){
   if (!REF.items) return;
@@ -4514,6 +4572,7 @@ const I18N_EN = {
   '🔁 Ulang Kaji':'🔁 Revise',
   '⏩ Video mesti ditonton pada kelajuan biasa.':'⏩ The video must be watched at normal speed.', '✅ Video telah ditonton sepenuhnya. Teruskan ke kuiz.':'✅ Video fully watched. Continue to the quiz.',
   '🔒 Tonton video hingga habis — kuiz dibuka selepas':'🔒 Watch the video to the end — the quiz unlocks in', 'lagi':'more', '(kiraan berhenti jika anda keluar dari skrin ini)':'(the countdown pauses if you leave this screen)',
+  'Anda telah':'You have', 'Anda':'You have', 'Mandatory Training Module — tonton video & jawab kuiz sekarang.':'the Mandatory Training Module — watch the video & answer the quiz now.',
   // Bahan rujukan
   '📚 Bahan Rujukan Kawalan Infeksi':'📚 Infection Control Reference Materials', '📊 Slaid Rujukan':'📊 Reference Slides', '🖼️ Poster Edukasi':'🖼️ Educational Posters', '🎬 Video Latihan':'🎬 Training Videos',
   '📂 Buka folder slaid penuh di Google Drive':'📂 Open the full slides folder in Google Drive', 'Belum ada bahan':'No materials yet', 'Belum ada bahan dalam kategori ini.':'No materials in this category yet.',
