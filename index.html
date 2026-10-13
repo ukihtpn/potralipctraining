@@ -649,6 +649,10 @@
     #v-dash > #pModul{ order:3; } #v-dash > #pLencana{ order:4; } #v-dash > #pBahan{ order:5; }
     /* staf bukan klinikal: kad Kuiz terus di bawah profil */
     body.st-bk #v-dash > .dash-top{ display:contents; }
+    body.st-bk #v-dash:not(.hidden){ gap:14px; }
+    body.st-bk #v-dash .d-prof, body.st-bk #v-dash .d-notes, body.st-bk #v-dash #cKuiz, body.st-bk #v-dash .d-scene, body.st-bk #v-dash .d-jom{ margin-top:0 !important; margin-bottom:0 !important; }
+    body.st-bk #v-dash .d-notes{ display:flex; flex-direction:column; gap:14px; } body.st-bk #v-dash .d-notes > .card{ margin:0 !important; }
+    body.st-bk #v-dash .d-notes:not(:has(> .card:not(.hidden))){ display:none; }
     body.st-bk #v-dash .d-prof{ order:-4; } body.st-bk #v-dash .d-notes{ order:-3; } body.st-bk #v-dash #cKuiz{ order:-2; } body.st-bk #v-dash .d-scene{ order:0; }
   }
   .cta-row{ display:grid; grid-template-columns:1fr 1.4fr 0.8fr; gap:10px; align-items:center; margin-top:16px; }
@@ -1231,6 +1235,8 @@
   .kz-card.kz-ok .kz-stp b{ background:#14a36a !important; }
   .kz-card .kz-stp em{ display:block; overflow:visible; text-overflow:clip; white-space:normal; }
   @media (max-width:600px){ .kz-card .kz-steps2 .kz-si{ width:34px; height:34px; } }
+  .kz-drv{ position:relative; } .kz-tutup{ position:absolute; left:0; right:0; bottom:0; height:56px; z-index:3; cursor:not-allowed; background:linear-gradient(transparent, rgba(0,0,0,.35)); }
+  .kz-btns{ justify-content:center; }
 </style>
 </head>
 <body>
@@ -3148,7 +3154,15 @@ function jenisBahan(x){ if (x.asal) return 'asal'; if (ytId(x.pautan)) return 'y
 function senaraiKZ(){ const L = bahanKuiz(); return L.length ? L : [{ id:'__asal', tajuk:'Slaid Kesedaran IPC', asal:true }]; }
 function kunciKZ(){ return 'ipcKZ_' + ((STATE.profil && STATE.profil.id) || 'x'); }
 function muatSelesaiKZ(){ try { KZ.selesai = JSON.parse(ls(kunciKZ()) || '{}') || {}; } catch(e){ KZ.selesai = {}; } }
-function tandaSelesai(id){ if (KZ.selesai[id]) return; KZ.selesai[id] = 1; try { ls(kunciKZ(), JSON.stringify(KZ.selesai)); } catch(e){} lukisSeqKZ(); kemasNavKZ(); }
+function tandaSelesai(id, auto){
+  if (KZ.selesai[id]) return; KZ.selesai[id] = 1; try { ls(kunciKZ(), JSON.stringify(KZ.selesai)); } catch(e){} lukisSeqKZ(); kemasNavKZ();
+  // seperti Training Hub: habis tonton semua → kuiz terus dibuka
+  const L = senaraiKZ();
+  if (auto !== false && L.every(y => KZ.selesai[y.id]) && !$('v-kuiz').classList.contains('hidden')){
+    toast('✅ Video selesai — kuiz akan bermula…');
+    setTimeout(() => { if (!$('v-kuiz').classList.contains('hidden')) mulaGame('kuizbk'); }, 2200);
+  }
+}
 function hentiVideoKZ(){ if (KZ.tik){ clearInterval(KZ.tik); KZ.tik = null; } if (KZ.yt){ try { KZ.yt.destroy(); } catch(e){} KZ.yt = null; } }
 function startSlides(){
   $('qSlides').classList.remove('hidden'); $('qQuiz').classList.add('hidden'); $('qResult').classList.add('hidden');
@@ -3266,11 +3280,11 @@ function videoDrive(x, tajuk){
   v.addEventListener('ratechange', () => { if (v.playbackRate > 1) v.playbackRate = 1; });
   v.addEventListener('ended', () => { if (sudah || KZ.vmax >= v.duration - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke bahan seterusnya.'); } });
   v.addEventListener('error', () => {
-    $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt"><iframe src="https://drive.google.com/file/d/${esc(fid)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>`;
+    // Drive tidak benarkan main terus → guna pemain Drive; bar kawalan (tarik/skip) ditutup & kuiz dikunci ikut tempoh video
+    $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt kz-drv"><iframe src="https://drive.google.com/file/d/${esc(fid)}/preview" allow="autoplay"></iframe>${sudah ? '' : '<div class="kz-tutup" title="Video tidak boleh dilangkau"></div>'}</div></div>`;
     if (sudah){ statusVideo('✅ Video telah ditonton sepenuhnya.'); return; }
     if (x.tempoh > 0) return pemasaTonton(x);
-    statusVideo('⚠ Video dimainkan melalui Google Drive. Tonton hingga habis, kemudian tandakan di bawah.');
-    $('kzSahWrap').classList.remove('hidden'); $('kzSah').checked = false; $('kzSah').disabled = false;
+    statusVideo('⏳ Tempoh video belum ditetapkan oleh UKI — kuiz belum boleh dibuka. Sila hubungi UKI (ext. 1153).');
   });
 }
 $('bKzPrev').onclick = () => { if (KZ.pos > 0){ KZ.pos--; sIdx = 0; renderSlide(); window.scrollTo({ top:0, behavior:'smooth' }); } };
@@ -4573,6 +4587,7 @@ const I18N_EN = {
   '⏩ Video mesti ditonton pada kelajuan biasa.':'⏩ The video must be watched at normal speed.', '✅ Video telah ditonton sepenuhnya. Teruskan ke kuiz.':'✅ Video fully watched. Continue to the quiz.',
   '🔒 Tonton video hingga habis — kuiz dibuka selepas':'🔒 Watch the video to the end — the quiz unlocks in', 'lagi':'more', '(kiraan berhenti jika anda keluar dari skrin ini)':'(the countdown pauses if you leave this screen)',
   'Anda telah':'You have', 'Anda':'You have', 'Mandatory Training Module — tonton video & jawab kuiz sekarang.':'the Mandatory Training Module — watch the video & answer the quiz now.',
+  '⏳ Tempoh video belum ditetapkan oleh UKI — kuiz belum boleh dibuka. Sila hubungi UKI (ext. 1153).':'⏳ The video length has not been set by UKI — the quiz cannot open yet. Please contact UKI (ext. 1153).', '✅ Video selesai — kuiz akan bermula…':'✅ Video finished — the quiz is starting…', 'Video tidak boleh dilangkau':'The video cannot be skipped',
   // Bahan rujukan
   '📚 Bahan Rujukan Kawalan Infeksi':'📚 Infection Control Reference Materials', '📊 Slaid Rujukan':'📊 Reference Slides', '🖼️ Poster Edukasi':'🖼️ Educational Posters', '🎬 Video Latihan':'🎬 Training Videos',
   '📂 Buka folder slaid penuh di Google Drive':'📂 Open the full slides folder in Google Drive', 'Belum ada bahan':'No materials yet', 'Belum ada bahan dalam kategori ini.':'No materials in this category yet.',
