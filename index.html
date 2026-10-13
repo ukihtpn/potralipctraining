@@ -1313,6 +1313,7 @@
       <div class="field"><label for="dNama">Nama Penuh</label><input id="dNama" class="upper" autocomplete="off" placeholder="CTH: SITI AMINAH BINTI ABDULLAH"><div class="name-hint">🪪 Nama penuh <b>SEPERTI DALAM KAD PENGENALAN (IC)</b>. Nama ini akan digunakan untuk log masuk.</div></div>
       <div class="field"><label for="dIc">No. Kad Pengenalan</label><input id="dIc" inputmode="numeric" maxlength="12" placeholder="12 digit tanpa sengkang"></div>
       <div class="field"><label for="dTel">No. Telefon</label><input id="dTel" inputmode="tel" maxlength="12" placeholder="cth: 0123456789"></div>
+      <div class="field"><label for="dJab">Jabatan / Unit</label><select id="dJab"><option value="">— Pilih jabatan anda —</option></select><div class="hint">Tidak pasti? Pilih <b>Tidak pasti</b> — UKI akan sahkan.</div></div>
       <div class="field hidden" id="dInstWrap"><label for="dInst">Institusi / Universiti / Kolej</label><input id="dInst" placeholder="cth: Kolej Kejururawatan …"></div>
       <div class="field"><label for="dEmel">Emel</label><input id="dEmel" type="email" placeholder="cth: nama@moh.gov.my"></div>
       <button class="btn btn-primary btn-block" id="btnDaftar" style="margin-top:18px;">Hantar Pendaftaran</button>
@@ -2108,9 +2109,12 @@ $('btnLogin').addEventListener('click', async () => {
   finally { busy(b, false); }
 });
 
-function bukaDaftar(){ $('dNama').value = $('inNama').value || ''; $('dInstWrap').classList.toggle('hidden', STATE.status !== 'attachment'); msg('daftarMsg', ''); authStep('a-daftar'); }
+function isiJabDaftar(){ const el = $('dJab'), j = (STATE.config && STATE.config.jabatan) || [], v = el.value;
+  el.innerHTML = '<option value="">— Pilih jabatan anda —</option>' + j.map(x => `<option>${esc(x)}</option>`).join('') + '<option value="TIDAK PASTI">Tidak pasti</option>'; el.value = v; }
+function bukaDaftar(){ isiJabDaftar(); $('dNama').value = $('inNama').value || ''; $('dInstWrap').classList.toggle('hidden', STATE.status !== 'attachment'); msg('daftarMsg', ''); authStep('a-daftar'); }
 $('btnDaftar').addEventListener('click', async () => {
-  const body = { type:'daftar', nama: $('dNama').value.trim().toUpperCase(), ic: $('dIc').value.trim(), telefon: $('dTel').value.trim(), emel: $('dEmel').value.trim(), kategori: STATE.kat, status: STATE.status || 'baru', institusi: $('dInst').value.trim() };
+  const body = { type:'daftar', nama: $('dNama').value.trim().toUpperCase(), ic: $('dIc').value.trim(), telefon: $('dTel').value.trim(), emel: $('dEmel').value.trim(), kategori: STATE.kat, status: STATE.status || 'baru', institusi: $('dInst').value.trim(), jabatan: $('dJab').value };
+  if (!body.jabatan) return msg('daftarMsg', 'Sila pilih jabatan / unit anda (atau "Tidak pasti").', 'err');
   if (body.status === 'attachment' && !body.institusi) return msg('daftarMsg', 'Sila isi institusi / universiti anda.', 'err');
   if (!body.nama) return msg('daftarMsg', 'Sila isi nama penuh.', 'err');
   if (!/^\d{12}$/.test(body.ic)) return msg('daftarMsg', 'No. K/P mesti 12 digit.', 'err');
@@ -2125,7 +2129,7 @@ $('btnDaftar').addEventListener('click', async () => {
       return;
     }
     $('inNama').value = d.nama; $('inIc4').value = '';
-    ['dNama','dIc','dTel','dEmel','dInst'].forEach(i => $(i).value = '');
+    ['dNama','dIc','dTel','dEmel','dInst','dJab'].forEach(i => $(i).value = '');
     authStep('a-login');
     msg('loginMsg', `✓ Pendaftaran berjaya (ID: <b>${esc(d.id)}</b>). Sila log masuk dengan 4 digit akhir No. K/P anda.`, 'ok');
     $('inIc4').focus();
@@ -3489,13 +3493,14 @@ async function reloadCo(){ const d = await apiPost({ type:'coord_list', pin: STA
 function renderCoList(d){
   $('coCount').textContent = d.senarai.length; $('navBaru').textContent = d.senarai.length;
   if (!d.senarai.length){ $('coList').innerHTML = '<p class="muted-note">Tiada pendaftaran baharu yang menunggu. 🎉</p>'; return; }
-  const jabOpts = d.jabatan.map(j => `<option>${esc(j)}</option>`).join('');
   $('coList').innerHTML = d.senarai.map(s => {
     const teks = `Salam ${s.nama}. Ini daripada Unit Kawalan Infeksi (UKI) HTPN. Pendaftaran anda di Portal Latihan IPC HTPN telah diterima (ID ${s.id}). Boleh maklumkan jabatan / unit tempat anda bertugas${s.status === 'Attachment' ? ' (penempatan attachment)' : ''}? Terima kasih.`;
     return `<div class="reg" data-id="${esc(s.id)}">
       <div class="reg-main">
         <div class="reg-name"><span class="st-n" style="cursor:pointer" onclick="bukaStaf('${esc(s.id)}')" title="Lihat / kemas kini maklumat"><b>${esc(s.nama)}</b></span></div>
         <div class="reg-meta"><span class="pill ${s.status === 'Attachment' ? 'gold' : ''}">${esc(s.status || 'Baru')}</span> ${esc(s.kategori || '')}${s.institusi ? ' · ' + esc(s.institusi) : ''} · Daftar ${esc(s.tarikh)} · ${esc(s.id)}</div>
+        ${s.jabDicadang ? `<div class="reg-meta">🏥 Jabatan (isi oleh staf): <b>${esc(s.jabDicadang)}</b></div>` : ''}
+        ${s.pendua ? `<div class="reg-meta" style="color:#b42318;font-weight:700">⚠ Mungkin daftar dua kali — sama dengan: ${esc(s.pendua)}</div>` : ''}
         <div class="reg-meta">📞 <span class="sel">${esc(s.telefon)}</span> · ✉️ <span class="sel">${esc(s.emel)}</span></div>
         <div class="reg-meta">🔑 ID log masuk: <b class="sel">${s.ic4 ? esc(s.ic4) : '—'}</b>${s.noKp ? ' · No. K/P: <span class="sel">' + esc(s.noKp) + '</span>' : ''} · <a href="#" onclick="event.preventDefault();bukaStaf('${esc(s.id)}')">✏️ Kemas kini</a></div>
       </div>
@@ -3504,7 +3509,7 @@ function renderCoList(d){
         ${s.emel ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(s.emel)}?subject=${encodeURIComponent('Portal Latihan IPC HTPN — pengesahan jabatan')}&body=${encodeURIComponent(teks)}">✉️ Emel</a>` : ''}
       </div>
       <div class="reg-assign">
-        <select class="cJab" aria-label="Jabatan untuk ${esc(s.nama)}"><option value="">— Pilih jabatan —</option>${jabOpts}</select>
+        <select class="cJab" aria-label="Jabatan untuk ${esc(s.nama)}"><option value="">— Pilih jabatan —</option>${d.jabatan.map(j => `<option ${j === s.jabDicadang ? 'selected' : ''}>${esc(j)}</option>`).join('')}</select>
         <button class="btn btn-primary btn-sm cGo">Masukkan</button>
       </div>
     </div>`; }).join('');
