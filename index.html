@@ -1235,7 +1235,8 @@
   .kz-card.kz-ok .kz-stp b{ background:#14a36a !important; }
   .kz-card .kz-stp em{ display:block; overflow:visible; text-overflow:clip; white-space:normal; }
   @media (max-width:600px){ .kz-card .kz-steps2 .kz-si{ width:34px; height:34px; } }
-  .kz-drv{ position:relative; } .kz-tutup{ position:absolute; left:0; right:0; bottom:0; height:56px; z-index:3; cursor:not-allowed; background:linear-gradient(transparent, rgba(0,0,0,.35)); }
+  .kz-drv{ position:relative; } .kz-tutup{ position:absolute; left:0; right:0; bottom:0; height:34%; min-height:110px; z-index:3; cursor:not-allowed; background:linear-gradient(transparent, rgba(0,0,0,.45)); }
+  .kz-tutup2{ position:absolute; right:0; top:0; width:80px; height:80px; z-index:3; cursor:not-allowed; }
   .kz-btns{ justify-content:center; }
 </style>
 </head>
@@ -3271,21 +3272,30 @@ function pemasaTonton(x){
 // --- Video Google Drive: main dalam <video> supaya boleh pantau; jika gagal, guna pratonton Drive + kotak pengesahan ---
 function videoDrive(x, tajuk){
   const fid = idFailDriveJS(x.pautan) || x.fileId, sudah = KZ.selesai[x.id];
-  $('kzBahan').innerHTML = tajuk + `<div class="g-media"><video id="kzVid" controls playsinline controlsList="nodownload noplaybackrate" disablepictureinpicture preload="metadata" src="https://drive.google.com/uc?export=download&id=${esc(fid)}" style="width:100%;border-radius:12px;background:#000"></video></div>`;
-  statusVideo(sudah ? '✅ Video telah ditonton sepenuhnya.' : '🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau (skip).');
+  // Cuba main terus dalam portal (boleh kawal: tak boleh tarik ke hadapan / cepatkan). Beberapa alamat Drive dicuba.
+  const kunci = (STATE.config && STATE.config.driveKey) || '';
+  const sumber = [`https://drive.usercontent.google.com/download?id=${fid}&export=download&confirm=t`, `https://drive.google.com/uc?export=download&confirm=t&id=${fid}`]
+    .concat(kunci ? [`https://www.googleapis.com/drive/v3/files/${fid}?alt=media&key=${encodeURIComponent(kunci)}`] : []);
+  let si = 0;
+  $('kzBahan').innerHTML = tajuk + `<div class="g-media"><video id="kzVid" controls playsinline controlsList="nodownload noplaybackrate" disablepictureinpicture preload="metadata" style="width:100%;border-radius:12px;background:#000"></video></div>`;
+  statusVideo(sudah ? '✅ Video telah ditonton sepenuhnya.' : '⏳ Memuatkan video…');
   const v = $('kzVid'); KZ.vmax = 0;
+  const cuba = () => { v.src = sumber[si]; v.load(); };
+  v.addEventListener('loadedmetadata', () => { if (!sudah) statusVideo('🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau atau dicepatkan.'); });
   v.addEventListener('play', () => { try { if (!$('laguLatar').paused) $('laguLatar').pause(); } catch(e){} });
-  v.addEventListener('timeupdate', () => { if (sudah || KZ.selesai[x.id]) return; if (v.currentTime > KZ.vmax + 2.5){ v.currentTime = KZ.vmax; toast('⏩ Video tidak boleh dilangkau. Sila tonton hingga habis.'); return; } KZ.vmax = Math.max(KZ.vmax, v.currentTime); if (v.duration) statusVideo(`🔒 Tonton video hingga habis untuk teruskan · ditonton <b>${Math.min(100, Math.floor(KZ.vmax / v.duration * 100))}%</b>`); });
-  v.addEventListener('seeking', () => { if (!sudah && !KZ.selesai[x.id] && v.currentTime > KZ.vmax + 2.5) v.currentTime = KZ.vmax; });
-  v.addEventListener('ratechange', () => { if (v.playbackRate > 1) v.playbackRate = 1; });
-  v.addEventListener('ended', () => { if (sudah || KZ.vmax >= v.duration - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke bahan seterusnya.'); } });
+  v.addEventListener('timeupdate', () => { if (sudah || KZ.selesai[x.id]) return; if (v.currentTime > KZ.vmax + 2){ v.currentTime = KZ.vmax; toast('⏩ Video tidak boleh dilangkau. Sila tonton hingga habis.'); return; } if (!v.seeking) KZ.vmax = Math.max(KZ.vmax, v.currentTime); if (v.duration) statusVideo(`🔒 Tonton video hingga habis untuk teruskan · ditonton <b>${Math.min(100, Math.floor(KZ.vmax / v.duration * 100))}%</b>`); });
+  v.addEventListener('seeking', () => { if (!sudah && !KZ.selesai[x.id] && v.currentTime > KZ.vmax + 2){ v.currentTime = KZ.vmax; toast('⏩ Video tidak boleh dilangkau. Sila tonton hingga habis.'); } });
+  v.addEventListener('ratechange', () => { if (v.playbackRate !== 1 && !sudah && !KZ.selesai[x.id]){ v.playbackRate = 1; toast('⏩ Video mesti ditonton pada kelajuan biasa.'); } });
+  v.addEventListener('ended', () => { if (sudah || KZ.vmax >= v.duration - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Kuiz akan bermula…'); } });
   v.addEventListener('error', () => {
-    // Drive tidak benarkan main terus → guna pemain Drive; bar kawalan (tarik/skip) ditutup & kuiz dikunci ikut tempoh video
-    $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt kz-drv"><iframe src="https://drive.google.com/file/d/${esc(fid)}/preview" allow="autoplay"></iframe>${sudah ? '' : '<div class="kz-tutup" title="Video tidak boleh dilangkau"></div>'}</div></div>`;
+    if (++si < sumber.length) return cuba();
+    // Drive tidak benarkan main terus → guna pemain Drive; kawalan ditutup & kuiz dikunci ikut tempoh video
+    $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt kz-drv"><iframe src="https://drive.google.com/file/d/${esc(fid)}/preview" allow="autoplay"></iframe>${sudah ? '' : '<div class="kz-tutup" title="Video tidak boleh dilangkau"></div><div class="kz-tutup2" title="Video tidak boleh dibuka di luar portal"></div>'}</div></div>`;
     if (sudah){ statusVideo('✅ Video telah ditonton sepenuhnya.'); return; }
     if (x.tempoh > 0) return pemasaTonton(x);
     statusVideo('⏳ Tempoh video belum ditetapkan oleh UKI — kuiz belum boleh dibuka. Sila hubungi UKI (ext. 1153).');
   });
+  cuba();
 }
 $('bKzPrev').onclick = () => { if (KZ.pos > 0){ KZ.pos--; sIdx = 0; renderSlide(); window.scrollTo({ top:0, behavior:'smooth' }); } };
 $('bKzNext').onclick = () => { const L = senaraiKZ(); if (KZ.pos < L.length - 1 && KZ.selesai[L[KZ.pos].id]){ KZ.pos++; sIdx = 0; renderSlide(); window.scrollTo({ top:0, behavior:'smooth' }); } };
@@ -4588,6 +4598,7 @@ const I18N_EN = {
   '🔒 Tonton video hingga habis — kuiz dibuka selepas':'🔒 Watch the video to the end — the quiz unlocks in', 'lagi':'more', '(kiraan berhenti jika anda keluar dari skrin ini)':'(the countdown pauses if you leave this screen)',
   'Anda telah':'You have', 'Anda':'You have', 'Mandatory Training Module — tonton video & jawab kuiz sekarang.':'the Mandatory Training Module — watch the video & answer the quiz now.',
   '⏳ Tempoh video belum ditetapkan oleh UKI — kuiz belum boleh dibuka. Sila hubungi UKI (ext. 1153).':'⏳ The video length has not been set by UKI — the quiz cannot open yet. Please contact UKI (ext. 1153).', '✅ Video selesai — kuiz akan bermula…':'✅ Video finished — the quiz is starting…', 'Video tidak boleh dilangkau':'The video cannot be skipped',
+  '⏳ Memuatkan video…':'⏳ Loading video…', '🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau atau dicepatkan.':'🔒 Watch the video to the end to continue. It cannot be skipped or sped up.', '✅ Video telah ditonton sepenuhnya. Kuiz akan bermula…':'✅ Video fully watched. The quiz is starting…', 'Video tidak boleh dibuka di luar portal':'The video cannot be opened outside the portal',
   // Bahan rujukan
   '📚 Bahan Rujukan Kawalan Infeksi':'📚 Infection Control Reference Materials', '📊 Slaid Rujukan':'📊 Reference Slides', '🖼️ Poster Edukasi':'🖼️ Educational Posters', '🎬 Video Latihan':'🎬 Training Videos',
   '📂 Buka folder slaid penuh di Google Drive':'📂 Open the full slides folder in Google Drive', 'Belum ada bahan':'No materials yet', 'Belum ada bahan dalam kategori ini.':'No materials in this category yet.',
