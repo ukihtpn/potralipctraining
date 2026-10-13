@@ -1176,6 +1176,7 @@
   .kz-h2{ margin:0 0 4px; font-weight:700; font-size:13.5px; color:#fff; opacity:.9; }
   .kz-rem{ position:relative; z-index:1; margin-top:12px; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.4); border-radius:12px; padding:9px 12px; font-size:13.5px; font-weight:600; }
   .kz-card.kz-belum .kz-steps span b{ color:#b3261e; } .kz-card.kz-ok .kz-steps span b{ color:#0b7a4b; }
+  .ri-mv.warn{ background:#fff4e5; border-color:#f3c98b; color:#9a5b00; }
 </style>
 </head>
 <body>
@@ -1682,6 +1683,7 @@
             <div class="field"><label for="rJenis">Jenis</label><select id="rJenis"><option value="Slaid">Slaid Rujukan</option><option value="Poster">Poster Edukasi</option><option value="Video">Video Latihan (YouTube / Drive)</option><option value="Kuiz">🧠 Bahan Kuiz Bukan Klinikal (Slaid / Video)</option></select></div>
             <div class="field"><label for="rTajuk">Tajuk (pilihan)</label><input id="rTajuk" placeholder="Kosong = guna nama fail"></div>
             <div class="field wide"><label for="rPautan" id="rPautanL">Pautan Google Drive</label><input id="rPautan" placeholder="https://docs.google.com/presentation/d/… atau https://drive.google.com/file/d/…"></div>
+            <div class="field hidden" id="rTempohW"><label for="rTempoh">Tempoh video (minit)</label><input id="rTempoh" inputmode="decimal" placeholder="cth: 12.5"></div>
             <button class="btn btn-primary" id="bRefAdd">＋ Tambah</button>
           </div>
           <div class="msg" id="refMsg"></div>
@@ -3163,9 +3165,11 @@ function videoYT(x, tajuk){
         onStateChange: e => {
           if (e.data === YT.PlayerState.PLAYING){ try { if (!$('laguLatar').paused) $('laguLatar').pause(); } catch(er){} }
           if (e.data === YT.PlayerState.ENDED){ const d = KZ.yt.getDuration(); if (sudah || KZ.vmax >= d - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke bahan seterusnya.'); } }
-        } } });
+        },
+        onPlaybackRateChange: e => { if (!sudah && !KZ.selesai[x.id] && e.data !== 1){ KZ.yt.setPlaybackRate(1); toast('⏩ Video mesti ditonton pada kelajuan biasa.'); } } } });
     KZ.tik = setInterval(() => {
       if (!KZ.yt || !KZ.yt.getCurrentTime || sudah || KZ.selesai[x.id]) return;
+      try { if (KZ.yt.getPlaybackRate && KZ.yt.getPlaybackRate() > 1) KZ.yt.setPlaybackRate(1); } catch(er){}
       const t = KZ.yt.getCurrentTime(), d = KZ.yt.getDuration ? KZ.yt.getDuration() : 0;
       if (t > KZ.vmax + 2.5){ KZ.yt.seekTo(KZ.vmax, true); toast('⏩ Video tidak boleh dilangkau. Sila tonton hingga habis.'); return; }
       if (KZ.yt.getPlayerState && KZ.yt.getPlayerState() === 1) KZ.vmax = Math.max(KZ.vmax, t);
@@ -3177,6 +3181,20 @@ function videoYT(x, tajuk){
     statusVideo('⚠ Pemantauan video tidak tersedia pada peranti ini. Tonton hingga habis, kemudian tandakan di bawah.');
     $('kzSahWrap').classList.remove('hidden'); $('kzSah').checked = !!KZ.selesai[x.id]; $('kzSah').disabled = !!KZ.selesai[x.id];
   });
+}
+// Video Drive dalam paparan Drive (tidak boleh dipantau): kuiz hanya dibuka selepas masa menonton = tempoh video.
+// Masa hanya dikira bila skrin portal sedang dibuka (tab aktif) — jika staf tukar tab / skrin tutup, kiraan berhenti.
+function fmtMS(n){ n = Math.max(0, Math.ceil(n)); return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); }
+function pemasaTonton(x){
+  const k = `ipcKZt_${x.id}_${(STATE.profil && STATE.profil.id) || 'x'}`; let lalu = 0; try { lalu = Number(ls(k)) || 0; } catch(e){}
+  const tik = () => {
+    if (KZ.selesai[x.id]) return;
+    if (document.visibilityState === 'visible' && document.hasFocus()) { lalu++; try { ls(k, String(lalu)); } catch(e){} }
+    const baki = x.tempoh - lalu;
+    if (baki <= 0){ clearInterval(KZ.tik); KZ.tik = null; tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke kuiz.'); return; }
+    statusVideo(`🔒 Tonton video hingga habis — kuiz dibuka selepas <b>${fmtMS(baki)}</b> lagi <small style="font-weight:600;opacity:.8">(kiraan berhenti jika anda keluar dari skrin ini)</small>`);
+  };
+  tik(); KZ.tik = setInterval(tik, 1000);
 }
 // --- Video Google Drive: main dalam <video> supaya boleh pantau; jika gagal, guna pratonton Drive + kotak pengesahan ---
 function videoDrive(x, tajuk){
@@ -3191,8 +3209,10 @@ function videoDrive(x, tajuk){
   v.addEventListener('ended', () => { if (sudah || KZ.vmax >= v.duration - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke bahan seterusnya.'); } });
   v.addEventListener('error', () => {
     $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt"><iframe src="https://drive.google.com/file/d/${esc(fid)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>`;
+    if (sudah){ statusVideo('✅ Video telah ditonton sepenuhnya.'); return; }
+    if (x.tempoh > 0) return pemasaTonton(x);
     statusVideo('⚠ Video dimainkan melalui Google Drive. Tonton hingga habis, kemudian tandakan di bawah.');
-    $('kzSahWrap').classList.remove('hidden'); $('kzSah').checked = !!KZ.selesai[x.id]; $('kzSah').disabled = !!KZ.selesai[x.id];
+    $('kzSahWrap').classList.remove('hidden'); $('kzSah').checked = false; $('kzSah').disabled = false;
   });
 }
 $('bKzPrev').onclick = () => { if (KZ.pos > 0){ KZ.pos--; sIdx = 0; renderSlide(); window.scrollTo({ top:0, behavior:'smooth' }); } };
@@ -4165,12 +4185,13 @@ function renderCoRef(){
   if (!REF.items){ g.innerHTML = '<span class="spinner dark"></span>'; return; }
   const list = REF.items.filter(x => x.jenis === CREF.tab), kz = CREF.tab === 'Kuiz';
   $('coRefNota').innerHTML = kz ? `<div class="kz-nota">🧠 <b>Langkah 1 Kuiz Kesedaran IPC (staf bukan klinikal)</b> — staf mesti tonton bahan di bawah ikut turutan (▲ ▼ untuk susun) sebelum kuiz dibuka, kemudian dapat e-sijil bertandatangan Ketua UKI.<br>
-      • <b>Video</b> (YouTube / Google Drive) mesti ditonton hingga habis — <b>tidak boleh dilangkau</b>.<br>
+      • <b>Video</b> mesti ditonton hingga habis — <b>tidak boleh dilangkau / dicepatkan</b>. <b>YouTube (Unlisted) paling disyorkan</b> — portal kawal terus pemain video. Untuk video <b>Google Drive</b>, isi <b>⏱ tempoh video</b> supaya kuiz hanya dibuka selepas staf kekal di skrin video selama tempoh itu.<br>
       • Soalan kuiz diedit di tab <b>Soalan Permainan → 🧠 Kuiz Bukan Klinikal</b> — <button type="button" class="btn btn-primary btn-sm" style="padding:3px 10px;font-size:12px" onclick="coTab('sec-soalan'); pilihSqLencana('kuizbk')">✏️ Edit soalan kuiz</button><br>
       ${list.length ? `Turutan semasa: <b>${list.length} bahan</b>.` : 'Belum ada video — sementara itu staf nampak <b>23 slaid asal</b>.'}<br>
       ➕ <b>Cara tambah:</b> di atas, pilih Jenis <b>🧠 Bahan Kuiz Bukan Klinikal</b> → tampal pautan video → <b>＋ Tambah</b>. Video yang tersilap masuk ke tab 🎬 Video boleh dipindah dengan butang <b>🧠 Jadikan bahan kuiz</b>.</div>` : '';
   g.innerHTML = list.length ? list.map((x, i) => `<div class="ref-item">${kz ? `<span class="kz-no">${i + 1}</span>` : ''}<a href="${esc(x.pautan)}" target="_blank" rel="noopener" style="text-decoration:none">
       <div class="ri-th">${thumbUrl(x) ? `<img src="${esc(thumbUrl(x))}" alt="" loading="lazy">` : `<span class="rc-ph">${kz ? '🧠' : '📄'}</span>`}</div><div class="ri-t">${esc(x.tajuk)}</div></a>
+      ${kz && !ytId(x.pautan) ? `<button type="button" class="ri-mv ${x.tempoh ? '' : 'warn'}" onclick="tetapTempoh('${esc(x.id)}', this)">${x.tempoh ? '⏱ Tempoh: ' + fmtMS(x.tempoh) : '⚠ Tetapkan tempoh video'}</button>` : ''}
       ${kz ? `<div class="kz-alih"><button type="button" ${i === 0 ? 'disabled' : ''} onclick="alihRef('${esc(x.id)}',-1,this)" aria-label="Naik">▲</button><button type="button" ${i === list.length - 1 ? 'disabled' : ''} onclick="alihRef('${esc(x.id)}',1,this)" aria-label="Turun">▼</button></div>` : ''}
       ${!kz && CREF.tab === 'Video' ? `<button class="ri-mv" onclick="jadiKuiz('${esc(x.id)}', this)">🧠 Jadikan bahan kuiz</button>` : ''}
       <button class="ri-del" onclick="padamRef('${esc(x.id)}', this)">Padam</button></div>`).join('') : '<p class="muted-note">Belum ada bahan dalam kategori ini.</p>';
@@ -4179,15 +4200,16 @@ document.querySelectorAll('[data-crt]').forEach(b => b.onclick = () => { CREF.ta
 $('rJenis').addEventListener('change', () => { const v = $('rJenis').value === 'Video', k = $('rJenis').value === 'Kuiz';
   $('rPautanL').textContent = k ? 'Pautan Google Slides / Google Drive (slaid, PDF, video) atau YouTube' : v ? 'Pautan video (YouTube atau Google Drive)' : 'Pautan Google Drive';
   $('rPautan').placeholder = k ? 'https://docs.google.com/presentation/d/…  ·  https://drive.google.com/file/d/…  ·  https://youtu.be/…' : v ? 'https://youtu.be/…  atau  https://drive.google.com/file/d/…/view' : 'https://docs.google.com/presentation/d/… atau https://drive.google.com/file/d/…';
+  $('rTempohW').classList.toggle('hidden', !k);
   if (k){ CREF.tab = 'Kuiz'; renderCoRef(); } });
 $('bRefAdd').onclick = async () => {
   const pautan = $('rPautan').value.trim(); if (!pautan) return msg('refMsg', $('rJenis').value === 'Video' || $('rJenis').value === 'Kuiz' ? 'Sila tampal pautan YouTube atau Google Drive.' : 'Sila tampal pautan Google Drive.', 'err');
   const b = $('bRefAdd'); busy(b, true, 'Menambah…'); msg('refMsg', '');
   try {
-    const d = await apiPost({ type:'coord_rujukan_tambah', pin: STATE.coPin, jenis: $('rJenis').value, tajuk: $('rTajuk').value.trim(), pautan });
+    const d = await apiPost({ type:'coord_rujukan_tambah', pin: STATE.coPin, jenis: $('rJenis').value, tajuk: $('rTajuk').value.trim(), pautan, tempoh: Math.round((parseFloat(String($('rTempoh').value).replace(',', '.')) || 0) * 60) });
     if (!d.ok){ msg('refMsg', esc(d.error), 'err'); return; }
     REF.items = REF.items || []; REF.items.push(d.item); CREF.tab = d.item.jenis; renderCoRef(); renderRefCards();
-    $('rPautan').value = ''; $('rTajuk').value = ''; msg('refMsg', `✓ "${esc(d.item.tajuk)}" ditambah.`, 'ok');
+    $('rPautan').value = ''; $('rTajuk').value = ''; $('rTempoh').value = ''; msg('refMsg', `✓ "${esc(d.item.tajuk)}" ditambah.`, 'ok');
   } catch(e){ msg('refMsg', '⚠ Gagal sambung ke pelayan.', 'err'); }
   finally { busy(b, false); }
 };
@@ -4198,6 +4220,14 @@ async function alihRef(id, arah, btn){
     if (!d.ok){ toast(d.error); return; }
     const a = REF.items.indexOf(L[k]), b = REF.items.indexOf(L[j]); [REF.items[a], REF.items[b]] = [REF.items[b], REF.items[a]]; renderCoRef();
   } catch(e){ toast('Gagal sambung ke pelayan.'); } finally { busy(btn, false); }
+}
+async function tetapTempoh(id, btn){
+  const x = REF.items.find(i => i.id === id); if (!x) return;
+  const v = prompt('Tempoh video ini (minit), cth 12.5 untuk 12 minit 30 saat.\nStaf mesti kekal di skrin video selama tempoh ini sebelum kuiz dibuka.', x.tempoh ? (x.tempoh / 60).toFixed(1) : '');
+  if (v === null) return; const sec = Math.round((parseFloat(String(v).replace(',', '.')) || 0) * 60);
+  busy(btn, true, '…');
+  try { const d = await apiPost({ type:'coord_rujukan_tempoh', pin: STATE.coPin, id, tempoh: sec }); if (!d.ok){ toast(d.error); return; } x.tempoh = d.tempoh; renderCoRef(); toast('✓ Tempoh disimpan'); }
+  catch(e){ toast('Gagal sambung ke pelayan.'); } finally { busy(btn, false); }
 }
 async function jadiKuiz(id, btn){
   busy(btn, true, '…');
@@ -4482,6 +4512,8 @@ const I18N_EN = {
   'Mandatory Training Module':'Mandatory Training Module', '✓ LENGKAP':'✓ COMPLETE', 'BELUM LENGKAP':'NOT COMPLETE', '✅ Anda telah':'✅ You have', 'LENGKAP':'COMPLETED', 'Mandatory Training Module.':'the Mandatory Training Module.',
   '⚠️ Anda':'⚠️ You have', 'Mandatory Training Module — tonton video & jawab kuiz sekarang.':'the Mandatory Training Module — watch the video & answer the quiz now.',
   '🔁 Ulang Kaji':'🔁 Revise',
+  '⏩ Video mesti ditonton pada kelajuan biasa.':'⏩ The video must be watched at normal speed.', '✅ Video telah ditonton sepenuhnya. Teruskan ke kuiz.':'✅ Video fully watched. Continue to the quiz.',
+  '🔒 Tonton video hingga habis — kuiz dibuka selepas':'🔒 Watch the video to the end — the quiz unlocks in', 'lagi':'more', '(kiraan berhenti jika anda keluar dari skrin ini)':'(the countdown pauses if you leave this screen)',
   // Bahan rujukan
   '📚 Bahan Rujukan Kawalan Infeksi':'📚 Infection Control Reference Materials', '📊 Slaid Rujukan':'📊 Reference Slides', '🖼️ Poster Edukasi':'🖼️ Educational Posters', '🎬 Video Latihan':'🎬 Training Videos',
   '📂 Buka folder slaid penuh di Google Drive':'📂 Open the full slides folder in Google Drive', 'Belum ada bahan':'No materials yet', 'Belum ada bahan dalam kategori ini.':'No materials in this category yet.',
