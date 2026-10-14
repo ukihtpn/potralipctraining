@@ -783,14 +783,15 @@
   button.dept-row{ width:100%; background:none; border:none; border-bottom:1px solid #eef3f2; font-family:inherit; cursor:pointer; text-align:left; }
   button.dept-row:hover{ background:#f5fbfa; }
   .dept-row .p.ok{ color:#0b8a63; } .dept-row .p.bad{ color:var(--coral); }
-  .reg{ display:grid; grid-template-columns:1fr auto; gap:10px 14px; border:1.5px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px; }
-  .reg-name{ font-size:14.5px; font-weight:800; color:var(--navy); }
-  .reg-meta{ font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .reg{ display:grid; grid-template-columns:minmax(0,1fr) auto; min-width:0; box-sizing:border-box; gap:10px 14px; border:1.5px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px; }
+  .reg-main{ min-width:0; }
+  .reg-name{ overflow-wrap:anywhere; font-size:14.5px; font-weight:800; color:var(--navy); }
+  .reg-meta{ overflow-wrap:anywhere; font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5; }
   .reg-meta .sel{ user-select:all; color:var(--ink); }
   .reg-act{ display:flex; gap:6px; align-items:flex-start; flex-wrap:wrap; justify-content:flex-end; }
-  .reg-assign{ grid-column:1/-1; display:flex; gap:8px; }
+  .reg-assign{ grid-column:1/-1; display:flex; gap:8px; min-width:0; } .reg-assign .btn{ flex:0 0 auto; }
   .reg-assign select{ flex:1; min-width:0; padding:9px 10px; border:1.5px solid #cfe3e1; border-radius:8px; font-size:13px; font-family:inherit; color:var(--navy); background:#fff; }
-  @media (max-width:520px){ .reg{ grid-template-columns:1fr; } .reg-act{ justify-content:flex-start; } }
+  @media (max-width:520px){ .reg{ grid-template-columns:minmax(0,1fr); } .reg-act{ justify-content:flex-start; } }
   .btn-wa{ background:#1FA855; color:#fff; } .btn-wa:hover{ background:#178a45; }
   .filters{ display:grid; grid-template-columns:1.2fr 1.2fr 1fr; gap:10px; }
   .filters .field{ margin-top:0; }
@@ -3183,6 +3184,8 @@ function tandaSelesai(id, auto){
     setTimeout(() => { if (!$('v-kuiz').classList.contains('hidden')) mulaGame('kuizbk'); }, 2200);
   }
 }
+function msgSelesaiKZ(){ const semua = senaraiKZ().every(y => KZ.selesai[y.id]);
+  return semua ? '✅ Video telah ditonton sepenuhnya. <button type="button" class="btn btn-primary btn-sm" style="margin-left:6px" onclick="mulaGame(\'kuizbk\')">▶ Mula Kuiz</button>' : '✅ Video telah ditonton sepenuhnya. Teruskan ke bahan seterusnya ▶'; }
 function hentiVideoKZ(){ if (KZ.tik){ clearInterval(KZ.tik); KZ.tik = null; } if (KZ.yt){ try { KZ.yt.destroy(); } catch(e){} KZ.yt = null; } }
 function startSlides(){
   $('qSlides').classList.remove('hidden'); $('qQuiz').classList.add('hidden'); $('qResult').classList.add('hidden');
@@ -3248,7 +3251,7 @@ function muatYTApi(){
 function videoYT(x, tajuk){
   const id = ytId(x.pautan), sudah = KZ.selesai[x.id];
   $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt"><div id="kzYT"></div></div></div>`;
-  statusVideo(sudah ? '✅ Video telah ditonton sepenuhnya.' : '🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau (skip).');
+  statusVideo(sudah ? msgSelesaiKZ() : '🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau (skip).');
   KZ.vmax = 0;
   muatYTApi().then(() => {
     if (senaraiKZ()[KZ.pos] !== x && senaraiKZ()[KZ.pos].id !== x.id) return;
@@ -3256,7 +3259,7 @@ function videoYT(x, tajuk){
       events:{
         onStateChange: e => {
           if (e.data === YT.PlayerState.PLAYING){ try { if (!$('laguLatar').paused) $('laguLatar').pause(); } catch(er){} }
-          if (e.data === YT.PlayerState.ENDED){ const d = KZ.yt.getDuration(); if (sudah || KZ.vmax >= d - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke bahan seterusnya.'); } }
+          if (e.data === YT.PlayerState.ENDED){ const d = KZ.yt.getDuration(); if (sudah || KZ.vmax >= d - 4){ tandaSelesai(x.id); statusVideo(msgSelesaiKZ()); } }
         },
         onPlaybackRateChange: e => { if (!sudah && !KZ.selesai[x.id] && e.data !== 1){ KZ.yt.setPlaybackRate(1); toast('⏩ Video mesti ditonton pada kelajuan biasa.'); } } } });
     KZ.tik = setInterval(() => {
@@ -3281,10 +3284,10 @@ function pemasaTonton(x){
   const k = `ipcKZt_${x.id}_${(STATE.profil && STATE.profil.id) || 'x'}`; let lalu = 0; try { lalu = Number(ls(k)) || 0; } catch(e){}
   const tik = () => {
     if (KZ.selesai[x.id]) return;
-    if (document.visibilityState === 'visible' && document.hasFocus()) { lalu++; try { ls(k, String(lalu)); } catch(e){} }
+    if (document.visibilityState === 'visible') { lalu++; try { ls(k, String(lalu)); } catch(e){} }
     const baki = x.tempoh - lalu;
-    if (baki <= 0){ clearInterval(KZ.tik); KZ.tik = null; tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Teruskan ke kuiz.'); return; }
-    statusVideo(`🔒 Tonton video hingga habis — kuiz dibuka selepas <b>${fmtMS(baki)}</b> lagi <small style="font-weight:600;opacity:.8">(kiraan berhenti jika anda keluar dari skrin ini)</small>`);
+    if (baki <= 0){ clearInterval(KZ.tik); KZ.tik = null; tandaSelesai(x.id); statusVideo(msgSelesaiKZ()); return; }
+    statusVideo(`🔒 Tonton video hingga habis — kuiz dibuka selepas <b>${fmtMS(baki)}</b> lagi <small style="font-weight:600;opacity:.8">(kiraan berhenti jika anda tukar tab / tutup skrin)</small>`);
   };
   tik(); KZ.tik = setInterval(tik, 1000);
 }
@@ -3297,7 +3300,7 @@ function videoDrive(x, tajuk){
     .concat(kunci ? [`https://www.googleapis.com/drive/v3/files/${fid}?alt=media&key=${encodeURIComponent(kunci)}`] : []);
   let si = 0;
   $('kzBahan').innerHTML = tajuk + `<div class="g-media"><video id="kzVid" controls playsinline controlsList="nodownload noplaybackrate" disablepictureinpicture preload="metadata" style="width:100%;border-radius:12px;background:#000"></video></div>`;
-  statusVideo(sudah ? '✅ Video telah ditonton sepenuhnya.' : '⏳ Memuatkan video…');
+  statusVideo(sudah ? msgSelesaiKZ() : '⏳ Memuatkan video…');
   const v = $('kzVid'); KZ.vmax = 0;
   const cuba = () => { v.src = sumber[si]; v.load(); };
   v.addEventListener('loadedmetadata', () => { if (!sudah) statusVideo('🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau atau dicepatkan.'); });
@@ -3305,12 +3308,12 @@ function videoDrive(x, tajuk){
   v.addEventListener('timeupdate', () => { if (sudah || KZ.selesai[x.id]) return; if (v.currentTime > KZ.vmax + 2){ v.currentTime = KZ.vmax; toast('⏩ Video tidak boleh dilangkau. Sila tonton hingga habis.'); return; } if (!v.seeking) KZ.vmax = Math.max(KZ.vmax, v.currentTime); if (v.duration) statusVideo(`🔒 Tonton video hingga habis untuk teruskan · ditonton <b>${Math.min(100, Math.floor(KZ.vmax / v.duration * 100))}%</b>`); });
   v.addEventListener('seeking', () => { if (!sudah && !KZ.selesai[x.id] && v.currentTime > KZ.vmax + 2){ v.currentTime = KZ.vmax; toast('⏩ Video tidak boleh dilangkau. Sila tonton hingga habis.'); } });
   v.addEventListener('ratechange', () => { if (v.playbackRate !== 1 && !sudah && !KZ.selesai[x.id]){ v.playbackRate = 1; toast('⏩ Video mesti ditonton pada kelajuan biasa.'); } });
-  v.addEventListener('ended', () => { if (sudah || KZ.vmax >= v.duration - 4){ tandaSelesai(x.id); statusVideo('✅ Video telah ditonton sepenuhnya. Kuiz akan bermula…'); } });
+  v.addEventListener('ended', () => { KZ.vmax = Math.max(KZ.vmax, v.currentTime || 0); if (sudah || !isFinite(v.duration) || KZ.vmax >= v.duration - 4){ tandaSelesai(x.id); statusVideo(msgSelesaiKZ()); } });
   v.addEventListener('error', () => {
     if (++si < sumber.length) return cuba();
     // Drive tidak benarkan main terus → guna pemain Drive; kawalan ditutup & kuiz dikunci ikut tempoh video
     $('kzBahan').innerHTML = tajuk + `<div class="g-media"><div class="yt kz-drv"><iframe src="https://drive.google.com/file/d/${esc(fid)}/preview" allow="autoplay"></iframe>${sudah ? '' : '<div class="kz-tutup" title="Video tidak boleh dilangkau"></div><div class="kz-tutup2" title="Video tidak boleh dibuka di luar portal"></div>'}</div></div>`;
-    if (sudah){ statusVideo('✅ Video telah ditonton sepenuhnya.'); return; }
+    if (sudah){ statusVideo(msgSelesaiKZ()); return; }
     if (x.tempoh > 0) return pemasaTonton(x);
     statusVideo('⏳ Tempoh video belum ditetapkan oleh UKI — kuiz belum boleh dibuka. Sila hubungi UKI (ext. 1153).');
   });
@@ -4640,7 +4643,7 @@ const I18N_EN = {
   '⚠️ Anda':'⚠️ You have', 'Mandatory Training Module — tonton video & jawab kuiz sekarang.':'the Mandatory Training Module — watch the video & answer the quiz now.',
   '🔁 Ulang Kaji':'🔁 Revise',
   '⏩ Video mesti ditonton pada kelajuan biasa.':'⏩ The video must be watched at normal speed.', '✅ Video telah ditonton sepenuhnya. Teruskan ke kuiz.':'✅ Video fully watched. Continue to the quiz.',
-  '🔒 Tonton video hingga habis — kuiz dibuka selepas':'🔒 Watch the video to the end — the quiz unlocks in', 'lagi':'more', '(kiraan berhenti jika anda keluar dari skrin ini)':'(the countdown pauses if you leave this screen)',
+  '🔒 Tonton video hingga habis — kuiz dibuka selepas':'🔒 Watch the video to the end — the quiz unlocks in', 'lagi':'more', '(kiraan berhenti jika anda tukar tab / tutup skrin)':'(the countdown pauses if you switch tabs or close the screen)', '▶ Mula Kuiz':'▶ Start Quiz', 'Teruskan ke bahan seterusnya ▶':'Continue to the next item ▶',
   'Anda telah':'You have', 'Anda':'You have', 'Mandatory Training Module — tonton video & jawab kuiz sekarang.':'the Mandatory Training Module — watch the video & answer the quiz now.',
   '⏳ Tempoh video belum ditetapkan oleh UKI — kuiz belum boleh dibuka. Sila hubungi UKI (ext. 1153).':'⏳ The video length has not been set by UKI — the quiz cannot open yet. Please contact UKI (ext. 1153).', '✅ Video selesai — kuiz akan bermula…':'✅ Video finished — the quiz is starting…', 'Video tidak boleh dilangkau':'The video cannot be skipped',
   '⏳ Memuatkan video…':'⏳ Loading video…', '🔒 Tonton video hingga habis untuk teruskan. Video tidak boleh dilangkau atau dicepatkan.':'🔒 Watch the video to the end to continue. It cannot be skipped or sped up.', '✅ Video telah ditonton sepenuhnya. Kuiz akan bermula…':'✅ Video fully watched. The quiz is starting…', 'Video tidak boleh dibuka di luar portal':'The video cannot be opened outside the portal',
