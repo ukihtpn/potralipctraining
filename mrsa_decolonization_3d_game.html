@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DecoloniZap 3D - MRSA Eradicator & Infection Control Education</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #030712;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.95; }
+            50% { transform: scale(1.03); opacity: 1; filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.7)); }
+        }
+
+        .pulse-btn {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(52, 211, 153, 0.5);
+            border-radius: 999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white overflow-hidden select-none">
+
+    <div id="game-container">
+        <!-- 3D Canvas Scene -->
+        <canvas id="canvas3d"></canvas>
+
+        <!-- HUD Header Overlay -->
+        <div id="hud" class="hidden absolute top-0 left-0 w-full p-3 sm:p-5 flex justify-between items-center z-10 pointer-events-none">
+            <!-- Score Badge -->
+            <div class="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 border border-emerald-500/40 shadow-lg pointer-events-auto">
+                <div class="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
+                    <i class="fa-solid fa-shield-virus text-lg"></i>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-400 font-semibold tracking-wider">SKOR KAWALAN</div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="score-text" class="text-xl sm:text-2xl font-black text-emerald-400">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Protocol Badge & Audio Mute Toggle Button -->
+            <div class="flex items-center gap-2">
+                <div class="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 border border-teal-500/40 shadow-lg">
+                    <div class="p-2 bg-teal-500/20 rounded-xl text-teal-300">
+                        <i class="fa-solid fa-clipboard-list text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-semibold tracking-wider">STATUS PROTOKOL</div>
+                        <div id="step-indicator" class="text-xs sm:text-sm font-bold text-teal-300">Langkah 1/7: Penempatan & Tagging</div>
+                    </div>
+                </div>
+
+                <!-- Sound / Mute Toggle Button -->
+                <button id="sound-toggle-btn" class="pointer-events-auto p-3 bg-slate-900/90 hover:bg-slate-800 border border-teal-500/40 rounded-2xl text-teal-300 text-base shadow-lg transition active:scale-95 flex items-center justify-center cursor-pointer" title="Buka / Senyapkan Muzik">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Front Page Modal (Minimalist & Clean) -->
+        <div id="start-modal" class="absolute inset-0 flex items-center justify-center p-4 z-20 glass-panel">
+            <div class="max-w-md w-full bg-slate-900/95 border border-slate-700/80 p-6 sm:p-7 rounded-3xl shadow-2xl text-center space-y-5">
+                <div class="w-16 h-16 bg-gradient-to-br from-teal-400 via-emerald-500 to-cyan-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-teal-500/30">
+                    <i class="fa-solid fa-shield-virus text-3xl text-white"></i>
+                </div>
+                
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-emerald-400 to-cyan-400">
+                        DecoloniZap 3D
+                    </h1>
+                </div>
+
+                <!-- Cara Bermain Ringkas -->
+                <div class="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 text-left text-xs space-y-2.5 text-slate-300">
+                    <div class="flex items-center gap-2 text-teal-300 font-bold border-b border-slate-800 pb-2 text-sm">
+                        <i class="fa-solid fa-gamepad text-emerald-400"></i> Cara Bermain:
+                    </div>
+                    <ul class="text-xs space-y-2 list-none">
+                        <li class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-hand-pointer text-cyan-400 text-sm shrink-0"></i>
+                            <span><strong>Tap Skrin / Tekan Space:</strong> Ketuk skrin telefon atau tekan spacebar untuk melompat/terapung.</span>
+                        </li>
+                        <li class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400 text-sm shrink-0"></i>
+                            <span><strong>Elak Koloni Kuman:</strong> Jangan langgar bakteria MRSA berwarna merah.</span>
+                        </li>
+                        <li class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-star text-amber-400 text-sm shrink-0"></i>
+                            <span><strong>Kutip Item Protokol:</strong> Permainan akan berhenti seketika secara automatik untuk membaca info klinikal dan menjawab kuiz santai.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <button id="start-btn" class="pulse-btn w-full py-4 px-6 bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-lg shadow-emerald-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-play"></i> MULAKAN LATIHAN
+                </button>
+            </div>
+        </div>
+
+        <!-- Checkpoint Edu-Card Modal (Auto-Pauses Game for Reading & Micro-Quiz) -->
+        <div id="checkpoint-modal" class="hidden absolute inset-0 flex items-center justify-center p-4 z-30 glass-panel">
+            <div class="max-w-md w-full bg-slate-900/98 border border-emerald-400/50 p-6 rounded-3xl shadow-2xl text-center space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div id="checkpoint-icon-bg" class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center text-xl">
+                            <i id="checkpoint-icon" class="fa-solid fa-door-closed"></i>
+                        </div>
+                        <div class="text-left">
+                            <div id="checkpoint-step" class="text-[10px] text-teal-400 font-bold uppercase tracking-wider">Langkah 1 daripada 7</div>
+                            <div id="checkpoint-title" class="text-base font-extrabold text-white">Penempatan & Tagging</div>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-amber-400/10 text-amber-300 text-[11px] font-black rounded-full border border-amber-400/30">
+                        INFO KLINIKAL
+                    </span>
+                </div>
+
+                <!-- Detailed Educational Text -->
+                <div class="bg-teal-950/40 p-4 rounded-2xl border border-teal-500/30 text-left">
+                    <p id="checkpoint-info" class="text-xs sm:text-sm text-teal-100 font-medium leading-relaxed">
+                        Info protokol akan dipaparkan di sini.
+                    </p>
+                </div>
+
+                <!-- Quick Verification Question -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left space-y-3">
+                    <div class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-question text-teal-400"></i> Uji Kefahaman Pantas:
+                    </div>
+                    <p id="quiz-question" class="text-xs text-slate-300">Soalan klinikal?</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <button id="quiz-btn-a" class="w-full text-left py-2.5 px-3 bg-slate-900 hover:bg-teal-900/60 border border-slate-700 hover:border-teal-500 rounded-xl text-xs text-slate-200 transition">
+                            A) Pilihan A
+                        </button>
+                        <button id="quiz-btn-b" class="w-full text-left py-2.5 px-3 bg-slate-900 hover:bg-teal-900/60 border border-slate-700 hover:border-teal-500 rounded-xl text-xs text-slate-200 transition">
+                            B) Pilihan B
+                        </button>
+                    </div>
+                    <div id="quiz-feedback" class="hidden text-xs font-semibold py-1"></div>
+                </div>
+
+                <!-- Continue Button -->
+                <button id="resume-btn" class="w-full py-3.5 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-extrabold text-sm rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Faham & Teruskan</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Resume Countdown Overlay -->
+        <div id="countdown-overlay" class="hidden absolute inset-0 flex items-center justify-center z-40 bg-slate-950/70 backdrop-blur-sm pointer-events-none">
+            <span id="countdown-number" class="text-6xl sm:text-8xl font-black text-teal-400 animate-ping">3</span>
+        </div>
+
+        <!-- Game Over Modal with Full Protocol Checklist -->
+        <div id="gameover-modal" class="hidden absolute inset-0 flex items-center justify-center p-4 z-20 glass-panel">
+            <div class="max-w-xl w-full bg-slate-900/95 border border-slate-700/80 p-5 sm:p-7 rounded-3xl shadow-2xl text-center space-y-4 max-h-[92vh] flex flex-col">
+                <div class="w-14 h-14 bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-rose-500/30 shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl text-white"></i>
+                </div>
+
+                <div class="shrink-0">
+                    <h2 class="text-xl sm:text-2xl font-bold text-rose-400">Jangkitan Silang Terjadi!</h2>
+                    <p class="text-slate-400 text-xs mt-0.5">Anda menyentuh koloni bakteria MRSA. Jom semak semula 7 SOP penting di bawah:</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 shrink-0">
+                    <div class="text-center">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Skor Akhir</div>
+                        <div id="final-score" class="text-2xl font-black text-emerald-400">0</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Langkah Dikuasai</div>
+                        <div id="final-steps" class="text-2xl font-black text-cyan-400">0 / 7</div>
+                    </div>
+                </div>
+
+                <!-- Comprehensive Educational Protocol Checklist -->
+                <div class="bg-teal-950/40 border border-teal-500/30 p-3.5 sm:p-4 rounded-2xl text-left space-y-2 overflow-y-auto custom-scrollbar flex-1">
+                    <div class="text-xs font-bold text-teal-300 flex items-center gap-2 border-b border-teal-500/20 pb-2 sticky top-0 bg-teal-950/90 py-1">
+                        <i class="fa-solid fa-clipboard-check text-sm text-teal-400"></i> Ringkasan Lengkap Protokol Kawalan & Dekolonisasi MRSA:
+                    </div>
+                    
+                    <ul class="text-[11px] text-teal-100/90 space-y-2 list-none">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>1. Penempatan & Tagging:</strong> Asingkan pesakit (sebaiknya di bilik isolasi / kohort) dan letakkan penanda Contact Precautions yang jelas di pintu atau katil.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>2. Contact Precaution & PPE:</strong> Pakai Long Sleeve Isolation Gown & Gloves serta amalkan 5 Moments of Hand Hygiene.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>3. Mupirocin 2% Nasal Ointment:</strong> Sapu 3 kali sehari selama 5 hari pada kedua-dua lubang hidung.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>4. Mandian Badan Chlorhexidine / Octenisan:</strong> Mandian cecair harian untuk seluruh badan sehingga pesakit discharge.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>5. Maklumkan Rujukan Jabatan:</strong> Beritahu jabatan dirujuk (cth: Radiologi, Pembedahan, Endoskopi) sebelum pesakit dibawa ke sana.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>6. Pembersihan Terminal:</strong> Lakukan terminal cleaning pada bilik/katil selepas pesakit discaj atau transfer out.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 text-xs mt-0.5 shrink-0"></i>
+                            <span><strong>7. Semak Semula Status Nasal Swab:</strong> Buat reswab selepas selesai protokol rawatan untuk pastikan pesakit bebas MRSA.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div id="portal-rank" class="hidden shrink-0 bg-amber-400/10 border border-amber-400/40 text-amber-200 text-xs font-bold rounded-2xl px-4 py-2.5"></div>
+                <button id="restart-btn" class="w-full py-3.5 px-6 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-extrabold text-base rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0">
+                    <i class="fa-solid fa-rotate-right"></i> CUBA LAGI DARI AWAL
+                </button>
+                <button id="portal-back" class="hidden w-full py-3 px-6 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm rounded-2xl border border-slate-600 transition active:scale-95 cursor-pointer shrink-0">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Portal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SEQUENTIAL EDUCATIONAL PROTOCOL (Step 1 to 7)
+        const PROTOCOL_STEPS = [
+            {
+                stepNumber: 1,
+                name: 'Penempatan & Tagging Contact Precautions',
+                title: 'Langkah 1: Penempatan Pesakit & Tagging',
+                info: 'Asingkan pesakit positif MRSA, sebaik-baiknya di bilik isolasi (atau kohort jika ruang terhad). Wajib letak tagging "Contact Precautions" yang jelas di pintu atau katil pesakit.',
+                icon: 'fa-door-closed',
+                color: 0x38bdf8, // Sky Blue
+                question: 'Di manakah pesakit MRSA sebaiknya ditempatkan dan apakah langkah awal?',
+                choiceA: 'A) Bilik isolasi & pasang tagging Contact Precautions',
+                choiceB: 'B) Wad biasa terbuka tanpa sebarang penanda',
+                correctChoice: 'A',
+                points: 100
+            },
+            {
+                stepNumber: 2,
+                name: 'Contact Precaution & PPE',
+                title: 'Langkah 2: Gaun & Sarung Tangan',
+                info: 'Amalkan Contact Precaution apabila merawat atau mengendalikan prosedur pesakit MRSA. Wajib memakai Long Sleeve Isolation Gown dan Gloves serta patuhi 5 Moments of Hand Hygiene.',
+                icon: 'fa-user-shield',
+                color: 0xf59e0b, // Amber
+                question: 'Apakah PPE utama untuk Contact Precaution pesakit MRSA?',
+                choiceA: 'A) Mask biasa sahaja',
+                choiceB: 'B) Long sleeve gown & gloves',
+                correctChoice: 'B',
+                points: 100
+            },
+            {
+                stepNumber: 3,
+                name: 'Mupirocin 2% Nasal Ointment',
+                title: 'Langkah 3: Terapi Sapuan Hidung',
+                info: 'Sapu Mupirocin 2% Nasal Ointment 3 kali sehari selama 5 hari pada kedua-dua lubang hidung (anterior nares). Picit hidung perlahan-lahan untuk meratakan salap.',
+                icon: 'fa-prescription-bottle-medical',
+                color: 0x06b6d4, // Cyan
+                question: 'Berapa kerap dan tempoh sapuan Mupirocin 2% pada hidung?',
+                choiceA: 'A) 3 kali sehari selama 5 hari',
+                choiceB: 'B) 1 kali sehari selama 2 hari',
+                correctChoice: 'A',
+                points: 100
+            },
+            {
+                stepNumber: 4,
+                name: 'Mandian Chlorhexidine / Octenisan',
+                title: 'Langkah 4: Mandian Seluruh Badan',
+                info: 'Gunakan cecair mandian antiseptik Chlorhexidine / Octenisan sekali sehari untuk mencuci seluruh badan pesakit secara konsisten sehingga pesakit discharge.',
+                icon: 'fa-shower',
+                color: 0x10b981, // Emerald
+                question: 'Berapa lamakah mandian antiseptik perlu diteruskan?',
+                choiceA: 'A) Sekali seminggu sahaja',
+                choiceB: 'B) Sekali sehari sehingga discharge',
+                correctChoice: 'B',
+                points: 100
+            },
+            {
+                stepNumber: 5,
+                name: 'Notifikasi Rujukan Jabatan',
+                title: 'Langkah 5: Komunikasi Antara Jabatan',
+                info: 'Wajib memaklumkan kepada unit berkaitan (seperti Jabatan Radiologi, Dewan Bedah, Endoskopi atau Hospital lain) SEBELUM menghantar pesakit untuk prosedur supaya langkah isolasi dapat disediakan.',
+                icon: 'fa-bullhorn',
+                color: 0x8b5cf6, // Purple
+                question: 'Bila perlu maklumkan kepada Jabatan Radiologi/Pembedahan?',
+                choiceA: 'A) Sebelum pesakit dihantar',
+                choiceB: 'B) Selepas pesakit tiba',
+                correctChoice: 'A',
+                points: 100
+            },
+            {
+                stepNumber: 6,
+                name: 'Pembersihan Terminal (Terminal Cleaning)',
+                title: 'Langkah 6: Terminal Cleaning Bilik/Katil',
+                info: 'Lakukan pembersihan terminal menyeluruh sebaik sahaja pesakit discaj atau dipindahkan (transfer out) bagi membasmi baki kuman MRSA pada persekitaran.',
+                icon: 'fa-pump-medical',
+                color: 0xec4899, // Pink
+                question: 'Bilakah pembersihan terminal (terminal cleaning) dilakukan?',
+                choiceA: 'A) Selepas discaj / transfer out',
+                choiceB: 'B) Sebulan sekali',
+                correctChoice: 'A',
+                points: 100
+            },
+            {
+                stepNumber: 7,
+                name: 'Semakan Status Nasal Swab',
+                title: 'Langkah 7: Ujian Ulangan (Reswab)',
+                info: 'Lakukan semakan semula status nasal swab selepas melengkapkan keseluruhan protokol dekolonisasi untuk mengesahkan bahawa kolonisasi MRSA telah berjaya dihapuskan sepenuhnya.',
+                icon: 'fa-vial-circle-check',
+                color: 0xf43f5e, // Rose
+                question: 'Mengapakah ujian nasal swab ulangan perlu diperiksa?',
+                choiceA: 'A) Sahkan dekolonisasi berjaya',
+                choiceB: 'B) Saja-saja rekod fail',
+                correctChoice: 'A',
+                points: 150
+            }
+        ];
+
+        let scene, camera, renderer;
+        let player, playerVelocity = 0;
+        let obstacles = [];
+        let currentCollectible = null;
+
+        // ==========================================
+        // DYNAMIC AUDIO SYNTHESIS & BACKGROUND MUSIC
+        // ==========================================
+        let audioCtx = null;
+        let bgmGainNode = null;
+        let sfxGainNode = null;
+        let isMuted = false;
+        let isMusicPlaying = false;
+        let bgmSchedulerId = null;
+        let currentMusicStep = 0;
+        let nextNoteTime = 0;
+
+        const TEMPO = 126; // Upbeat, energetic hospital-arcade BPM
+        const SEC_PER_STEP = (60 / TEMPO) / 4; // 16th-note step timing
+
+        // Upbeat Medical-Arcade Bassline Frequencies (Am - F - C - G sequence)
+        const BASS_NOTES = [
+            110.00, 110.00, 220.00, 110.00, 110.00, 220.00, 130.81, 164.81, // Bar 1: Am
+            87.31,  87.31,  174.61, 87.31,  87.31,  174.61, 110.00, 130.81, // Bar 2: F
+            130.81, 130.81, 261.63, 130.81, 130.81, 261.63, 164.81, 196.00, // Bar 3: C
+            98.00,  98.00,  196.00, 98.00,  98.00,  196.00, 123.47, 146.83  // Bar 4: G
+        ];
+
+        // Catchy Futuristic Arpeggio / Lead
+        const LEAD_NOTES = [
+            440.00, 0, 523.25, 659.25, 0, 523.25, 440.00, 0,
+            349.23, 0, 440.00, 523.25, 0, 440.00, 349.23, 0,
+            523.25, 0, 659.25, 783.99, 0, 659.25, 523.25, 0,
+            392.00, 0, 493.88, 587.33, 0, 493.88, 392.00, 0
+        ];
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Master BGM Gain
+                bgmGainNode = audioCtx.createGain();
+                bgmGainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                bgmGainNode.connect(audioCtx.destination);
+
+                // Master SFX Gain
+                sfxGainNode = audioCtx.createGain();
+                sfxGainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                sfxGainNode.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Play Sound Effects (SFX)
+        function playSound(type) {
+            try {
+                if (isMuted) return;
+                initAudio();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+
+                if (type === 'jump') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(260, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(540, audioCtx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else if (type === 'checkpoint') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(660, audioCtx.currentTime + 0.08);
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.16);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.32);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.32);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(1046, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                } else if (type === 'hit') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(45, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch (e) {}
+        }
+
+        // Upbeat Procedural Background Music Synthesizer
+        function scheduleMusicStep(step, time) {
+            if (!audioCtx || isMuted) return;
+
+            // 1. Kick Drum (Punchy 4-on-the-floor beat on steps 0, 4, 8, 12, 16, 20, 24, 28)
+            if (step % 4 === 0) {
+                const kickOsc = audioCtx.createOscillator();
+                const kickGain = audioCtx.createGain();
+                kickOsc.connect(kickGain);
+                kickGain.connect(bgmGainNode);
+
+                kickOsc.frequency.setValueAtTime(140, time);
+                kickOsc.frequency.exponentialRampToValueAtTime(38, time + 0.09);
+                kickGain.gain.setValueAtTime(0.55, time);
+                kickGain.gain.linearRampToValueAtTime(0.01, time + 0.09);
+
+                kickOsc.start(time);
+                kickOsc.stop(time + 0.09);
+            }
+
+            // 2. Crisp Hi-Hat (Every off-beat step: 2, 6, 10, 14...)
+            if (step % 4 === 2) {
+                const hatOsc = audioCtx.createOscillator();
+                const hatGain = audioCtx.createGain();
+                hatOsc.type = 'highpass';
+                hatOsc.connect(hatGain);
+                hatGain.connect(bgmGainNode);
+
+                hatOsc.frequency.setValueAtTime(7500, time);
+                hatGain.gain.setValueAtTime(0.12, time);
+                hatGain.gain.linearRampToValueAtTime(0.01, time + 0.04);
+
+                hatOsc.start(time);
+                hatOsc.stop(time + 0.04);
+            }
+
+            // 3. Energetic Synth Bassline
+            const bassFreq = BASS_NOTES[step % BASS_NOTES.length];
+            if (bassFreq > 0) {
+                const bassOsc = audioCtx.createOscillator();
+                const bassGain = audioCtx.createGain();
+                const bassFilter = audioCtx.createBiquadFilter();
+
+                bassOsc.type = 'sawtooth';
+                bassOsc.frequency.setValueAtTime(bassFreq, time);
+
+                bassFilter.type = 'lowpass';
+                bassFilter.frequency.setValueAtTime(500, time);
+                bassFilter.frequency.exponentialRampToValueAtTime(200, time + SEC_PER_STEP * 0.9);
+
+                bassGain.gain.setValueAtTime(0.3, time);
+                bassGain.gain.linearRampToValueAtTime(0.01, time + SEC_PER_STEP * 0.95);
+
+                bassOsc.connect(bassFilter);
+                bassFilter.connect(bassGain);
+                bassGain.connect(bgmGainNode);
+
+                bassOsc.start(time);
+                bassOsc.stop(time + SEC_PER_STEP);
+            }
+
+            // 4. Upbeat Sci-fi Melody / Arp
+            const leadFreq = LEAD_NOTES[step % LEAD_NOTES.length];
+            if (leadFreq > 0) {
+                const leadOsc = audioCtx.createOscillator();
+                const leadGain = audioCtx.createGain();
+
+                leadOsc.type = 'triangle';
+                leadOsc.frequency.setValueAtTime(leadFreq, time);
+
+                leadGain.gain.setValueAtTime(0.18, time);
+                leadGain.gain.exponentialRampToValueAtTime(0.01, time + SEC_PER_STEP * 0.8);
+
+                leadOsc.connect(leadGain);
+                leadGain.connect(bgmGainNode);
+
+                leadOsc.start(time);
+                leadOsc.stop(time + SEC_PER_STEP * 0.85);
+            }
+        }
+
+        function bgmSchedulerLoop() {
+            if (!isMusicPlaying) return;
+
+            while (nextNoteTime < audioCtx.currentTime + 0.12) {
+                scheduleMusicStep(currentMusicStep, nextNoteTime);
+                nextNoteTime += SEC_PER_STEP;
+                currentMusicStep = (currentMusicStep + 1) % 32;
+            }
+            bgmSchedulerId = setTimeout(bgmSchedulerLoop, 30);
+        }
+
+        function startBGM() {
+            initAudio();
+            if (isMusicPlaying) return;
+            isMusicPlaying = true;
+            nextNoteTime = audioCtx.currentTime + 0.05;
+            currentMusicStep = 0;
+            bgmSchedulerLoop();
+        }
+
+        function pauseBGM() {
+            isMusicPlaying = false;
+            if (bgmSchedulerId) clearTimeout(bgmSchedulerId);
+            if (bgmGainNode && audioCtx) {
+                bgmGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.05);
+            }
+        }
+
+        function resumeBGM() {
+            if (!isGameActive || isPausedForCheckpoint) return;
+            initAudio();
+            if (bgmGainNode && audioCtx) {
+                bgmGainNode.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            }
+            if (!isMusicPlaying) {
+                isMusicPlaying = true;
+                nextNoteTime = audioCtx.currentTime + 0.05;
+                bgmSchedulerLoop();
+            }
+        }
+
+        function stopBGM() {
+            pauseBGM();
+            currentMusicStep = 0;
+        }
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            const icon = document.getElementById('sound-icon');
+            if (isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-rose-400';
+                if (bgmGainNode && audioCtx) bgmGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                if (sfxGainNode && audioCtx) sfxGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-teal-300';
+                initAudio();
+                if (bgmGainNode && audioCtx) bgmGainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                if (sfxGainNode && audioCtx) sfxGainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                if (isGameActive && !isPausedForCheckpoint) {
+                    resumeBGM();
+                }
+            }
+        }
+
+        // BALANCED RESPONSIVE PHYSICS (Comfortable & Responsive for mobile gameplay)
+        const gravity = -0.0050;
+        const jumpStrength = 0.102;
+        const gameSpeed = 0.115;
+
+        let score = 0;
+        let currentStepIndex = 0;
+        let isGameActive = false;
+        let isPausedForCheckpoint = false;
+        let animationFrameId;
+        let spawnTimer = 0;
+
+        // DOM Elements
+        const startModal = document.getElementById('start-modal');
+        const gameoverModal = document.getElementById('gameover-modal');
+        const checkpointModal = document.getElementById('checkpoint-modal');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const countdownNumber = document.getElementById('countdown-number');
+        const hud = document.getElementById('hud');
+        const scoreText = document.getElementById('score-text');
+        const stepIndicator = document.getElementById('step-indicator');
+        const finalScore = document.getElementById('final-score');
+        const finalSteps = document.getElementById('final-steps');
+
+        // Checkpoint Elements
+        const checkpointIcon = document.getElementById('checkpoint-icon');
+        const checkpointStep = document.getElementById('checkpoint-step');
+        const checkpointTitle = document.getElementById('checkpoint-title');
+        const checkpointInfo = document.getElementById('checkpoint-info');
+        const quizQuestion = document.getElementById('quiz-question');
+        const quizBtnA = document.getElementById('quiz-btn-a');
+        const quizBtnB = document.getElementById('quiz-btn-b');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        const resumeBtn = document.getElementById('resume-btn');
+
+        function initThree() {
+            const container = document.getElementById('game-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x030712);
+            scene.fog = new THREE.FogExp2(0x030712, 0.02);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 10);
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.4);
+            dirLight.position.set(5, 10, 8);
+            scene.add(dirLight);
+
+            createTunnelEnvironment();
+            createPlayer();
+
+            window.addEventListener('resize', onWindowResize);
+
+            // Controls - Desktop & Mobile
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    handleJump();
+                }
+            });
+
+            // Smooth Touch Event Handling for Mobile Screens
+            container.addEventListener('touchstart', (e) => {
+                if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                    e.preventDefault();
+                    handleJump();
+                }
+            }, { passive: false });
+
+            container.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse' && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                    handleJump();
+                }
+            });
+        }
+
+        function createPlayer() {
+            const group = new THREE.Group();
+
+            const bodyGeo = new THREE.SphereGeometry(0.65, 32, 32);
+            bodyGeo.scale(1, 1.25, 0.9);
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: 0x06b6d4,
+                roughness: 0.1,
+                metalness: 0.2,
+                transparent: true,
+                opacity: 0.9,
+                emissive: 0x0284c7,
+                emissiveIntensity: 0.6
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            group.add(body);
+
+            const coreGeo = new THREE.IcosahedronGeometry(0.35, 2);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0x34d399, wireframe: true });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            group.add(core);
+
+            const ringGeo = new THREE.TorusGeometry(0.82, 0.04, 16, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x6ee7b7 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2.5;
+            group.add(ring);
+
+            group.position.set(-3.2, 0, 0);
+            scene.add(group);
+            player = group;
+        }
+
+        function createTunnelEnvironment() {
+            for (let i = 0; i < 22; i++) {
+                const ringGeo = new THREE.TorusGeometry(8.5, 0.12, 16, 40);
+                const ringMat = new THREE.MeshStandardMaterial({
+                    color: 0x0f172a,
+                    emissive: 0x0284c7,
+                    emissiveIntensity: 0.15
+                });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.position.z = -i * 7;
+                scene.add(ringMesh);
+            }
+        }
+
+        function createMRSAObstacle(xPos) {
+            const group = new THREE.Group();
+
+            // Core
+            const coreGeo = new THREE.SphereGeometry(0.75, 20, 20);
+            const coreMat = new THREE.MeshStandardMaterial({
+                color: 0xe11d48,
+                emissive: 0x9f1239,
+                emissiveIntensity: 0.5
+            });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            group.add(core);
+
+            // Spikes
+            const spikeGeo = new THREE.ConeGeometry(0.12, 0.45, 6);
+            const spikeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b });
+            for (let i = 0; i < 16; i++) {
+                const spike = new THREE.Mesh(spikeGeo, spikeMat);
+                const u = Math.random();
+                const v = Math.random();
+                const theta = u * 2.0 * Math.PI;
+                const phi = Math.acos(2.0 * v - 1.0);
+                const r = 0.75;
+                spike.position.x = r * Math.sin(phi) * Math.cos(theta);
+                spike.position.y = r * Math.sin(phi) * Math.sin(theta);
+                spike.position.z = r * Math.cos(phi);
+                spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), spike.position.clone().normalize());
+                group.add(spike);
+            }
+
+            // Balanced gap for fun and fair dodging
+            const gapY = (Math.random() - 0.5) * 3.2;
+            const gapSize = 4.2;
+
+            const topObstacle = group.clone();
+            topObstacle.position.set(xPos, gapY + gapSize, 0);
+
+            const bottomObstacle = group.clone();
+            bottomObstacle.position.set(xPos, gapY - gapSize, 0);
+
+            scene.add(topObstacle);
+            scene.add(bottomObstacle);
+
+            obstacles.push({
+                top: topObstacle,
+                bottom: bottomObstacle,
+                passed: false,
+                x: xPos
+            });
+        }
+
+        function spawnNextStepCollectible(xPos) {
+            if (currentCollectible) return;
+
+            const stepData = PROTOCOL_STEPS[currentStepIndex % PROTOCOL_STEPS.length];
+            const group = new THREE.Group();
+
+            let mesh;
+            if (stepData.stepNumber === 1) { // Isolation Sign / Door Tag
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.15), new THREE.MeshStandardMaterial({ color: stepData.color, emissive: 0x0284c7, emissiveIntensity: 0.5 }));
+            } else if (stepData.stepNumber === 2) { // Gown/Gloves Shield
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), new THREE.MeshStandardMaterial({ color: stepData.color, emissive: 0xb45309, emissiveIntensity: 0.4 }));
+            } else if (stepData.stepNumber === 3) { // Mupirocin Tube
+                mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, 0.9, 16), new THREE.MeshStandardMaterial({ color: stepData.color }));
+                mesh.rotation.z = Math.PI / 4;
+            } else if (stepData.stepNumber === 4) { // CHG Wash Bottle
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.85, 0.45), new THREE.MeshStandardMaterial({ color: stepData.color }));
+            } else if (stepData.stepNumber === 7) { // Nasal Swab Test Tube
+                mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.0, 14), new THREE.MeshStandardMaterial({ color: stepData.color, emissive: 0xe11d48, emissiveIntensity: 0.4 }));
+            } else {
+                mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), new THREE.MeshStandardMaterial({ color: stepData.color }));
+            }
+            group.add(mesh);
+
+            // Pulsing Halo Ring
+            const ringGeo = new THREE.TorusGeometry(0.75, 0.04, 12, 28);
+            const ringMat = new THREE.MeshBasicMaterial({ color: stepData.color });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            group.add(ring);
+
+            group.position.set(xPos, 0, 0);
+            group.userData = stepData;
+
+            scene.add(group);
+            currentCollectible = group;
+        }
+
+        function handleJump() {
+            if (!isGameActive || isPausedForCheckpoint) return;
+            playerVelocity = jumpStrength;
+            playSound('jump');
+        }
+
+        function triggerCheckpoint(stepData) {
+            isPausedForCheckpoint = true;
+            playSound('checkpoint');
+            pauseBGM(); // Pause music gracefully to focus on reading
+
+            // Populate Checkpoint Modal
+            checkpointStep.textContent = `Langkah ${stepData.stepNumber} daripada 7`;
+            checkpointTitle.textContent = stepData.name;
+            checkpointInfo.textContent = stepData.info;
+            checkpointIcon.className = `fa-solid ${stepData.icon}`;
+
+            // Setup Quick Quiz
+            quizQuestion.textContent = stepData.question;
+            quizBtnA.textContent = stepData.choiceA;
+            quizBtnB.textContent = stepData.choiceB;
+            quizFeedback.className = 'hidden text-xs font-semibold py-1';
+            quizBtnA.className = 'w-full text-left py-2.5 px-3 bg-slate-900 hover:bg-teal-900/60 border border-slate-700 hover:border-teal-500 rounded-xl text-xs text-slate-200 transition';
+            quizBtnB.className = 'w-full text-left py-2.5 px-3 bg-slate-900 hover:bg-teal-900/60 border border-slate-700 hover:border-teal-500 rounded-xl text-xs text-slate-200 transition';
+            quizBtnA.disabled = false;
+            quizBtnB.disabled = false;
+
+            // Bind Quiz Answers
+            quizBtnA.onclick = () => handleQuizAnswer('A', stepData);
+            quizBtnB.onclick = () => handleQuizAnswer('B', stepData);
+
+            checkpointModal.classList.remove('hidden');
+        }
+
+        function handleQuizAnswer(selected, stepData) {
+            quizBtnA.disabled = true;
+            quizBtnB.disabled = true;
+
+            if (selected === stepData.correctChoice) {
+                playSound('correct');
+                score += 50;
+                scoreText.textContent = score;
+                quizFeedback.textContent = '🎉 Tepat sekali! +50 Skor Bonus Kefahaman Klinikal.';
+                quizFeedback.className = 'text-xs font-bold text-emerald-400 py-1';
+                
+                // Clear nearby MRSA obstacles as reward
+                obstacles.forEach(obs => {
+                    scene.remove(obs.top);
+                    scene.remove(obs.bottom);
+                });
+                obstacles = [];
+            } else {
+                quizFeedback.textContent = `Jawapan tepat: ${stepData.correctChoice === 'A' ? stepData.choiceA : stepData.choiceB}. Teruskan pembelajaran!`;
+                quizFeedback.className = 'text-xs font-bold text-amber-400 py-1';
+            }
+        }
+
+        function resumeAfterCheckpoint() {
+            checkpointModal.classList.add('hidden');
+            
+            // Advance to next clinical step
+            currentStepIndex++;
+            updateStepIndicator();
+
+            // Gentle countdown to resume smoothly
+            let count = 3;
+            countdownNumber.textContent = count;
+            countdownOverlay.classList.remove('hidden');
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownNumber.textContent = count;
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownOverlay.classList.add('hidden');
+                    isPausedForCheckpoint = false;
+                    playerVelocity = 0.03;
+                    resumeBGM(); // Resume lively background music!
+                }
+            }, 700);
+        }
+
+        function updateStepIndicator() {
+            const nextStep = PROTOCOL_STEPS[currentStepIndex % PROTOCOL_STEPS.length];
+            stepIndicator.textContent = `Langkah ${(currentStepIndex % 7) + 1}/7: ${nextStep.name}`;
+        }
+
+        function startGame() {
+            score = 0;
+            currentStepIndex = 0;
+            playerVelocity = 0;
+            scoreText.textContent = '0';
+            updateStepIndicator();
+
+            // Clean scene
+            obstacles.forEach(obs => {
+                scene.remove(obs.top);
+                scene.remove(obs.bottom);
+            });
+            if (currentCollectible) {
+                scene.remove(currentCollectible);
+                currentCollectible = null;
+            }
+            obstacles = [];
+
+            player.position.set(-3.2, 0, 0);
+            player.rotation.set(0, 0, 0);
+
+            startModal.classList.add('hidden');
+            gameoverModal.classList.add('hidden');
+            checkpointModal.classList.add('hidden');
+            hud.classList.remove('hidden');
+
+            isGameActive = true;
+            isPausedForCheckpoint = false;
+            spawnTimer = 0;
+
+            // Start Upbeat Background Music
+            startBGM();
+
+            // Spawn first friendly obstacle & first educational collectible
+            createMRSAObstacle(9);
+            spawnNextStepCollectible(15);
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animate();
+        }
+
+        function gameOver() {
+            if (!isGameActive) return;
+            isGameActive = false;
+            stopBGM();
+            playSound('hit');
+            finalScore.textContent = score;
+            finalSteps.textContent = `${Math.min(currentStepIndex, 7)} / 7`;
+            // Zon Arked portal: hantar skor ke Papan Juara
+            if (window.parent !== window) {
+                const r = document.getElementById('portal-rank'); r.textContent = 'Menghantar skor ke Papan Juara…'; r.classList.remove('hidden');
+                window.parent.postMessage({ type: 'arked-skor', game: 'mrsa', skor: score, langkah: Math.min(currentStepIndex, 7) }, '*');
+            }
+            gameoverModal.classList.remove('hidden');
+            hud.classList.add('hidden');
+        }
+
+        function animate() {
+            if (!isGameActive) return;
+
+            animationFrameId = requestAnimationFrame(animate);
+
+            // When paused at a Checkpoint, Three.js still renders with slow rotation
+            if (isPausedForCheckpoint) {
+                if (currentCollectible) currentCollectible.rotation.y += 0.02;
+                renderer.render(scene, camera);
+                return;
+            }
+
+            // Apply soft physics
+            playerVelocity += gravity;
+            player.position.y += playerVelocity;
+            player.rotation.z = Math.max(-0.35, Math.min(0.35, playerVelocity * 3.5));
+            player.children[1].rotation.y += 0.025;
+
+            // Ceil & floor boundary
+            if (player.position.y > 5.5 || player.position.y < -5.5) {
+                gameOver();
+                return;
+            }
+
+            // Spawn obstacles periodically
+            spawnTimer++;
+            if (spawnTimer > 150) {
+                spawnTimer = 0;
+                createMRSAObstacle(11);
+                
+                // If there's currently no collectible in scene, spawn the next required step
+                if (!currentCollectible) {
+                    spawnNextStepCollectible(18);
+                }
+            }
+
+            // Process Obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.top.position.x -= gameSpeed;
+                obs.bottom.position.x -= gameSpeed;
+                obs.x -= gameSpeed;
+
+                obs.top.rotation.y += 0.015;
+                obs.bottom.rotation.y += 0.015;
+
+                if (!obs.passed && obs.x < player.position.x) {
+                    obs.passed = true;
+                    score += 10;
+                    scoreText.textContent = score;
+                }
+
+                const playerBox = new THREE.Box3().setFromObject(player);
+                const topBox = new THREE.Box3().setFromObject(obs.top);
+                const bottomBox = new THREE.Box3().setFromObject(obs.bottom);
+
+                if (playerBox.intersectsBox(topBox) || playerBox.intersectsBox(bottomBox)) {
+                    gameOver();
+                    return;
+                }
+
+                if (obs.x < -12) {
+                    scene.remove(obs.top);
+                    scene.remove(obs.bottom);
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Process Collectible Item
+            if (currentCollectible) {
+                currentCollectible.position.x -= gameSpeed;
+                currentCollectible.rotation.y += 0.03;
+
+                const playerBox = new THREE.Box3().setFromObject(player);
+                const itemBox = new THREE.Box3().setFromObject(currentCollectible);
+
+                if (playerBox.intersectsBox(itemBox)) {
+                    const stepData = currentCollectible.userData;
+                    score += stepData.points;
+                    scoreText.textContent = score;
+
+                    scene.remove(currentCollectible);
+                    currentCollectible = null;
+
+                    // Trigger the educational checkpoint pause
+                    triggerCheckpoint(stepData);
+                } else if (currentCollectible && currentCollectible.position.x < -12) {
+                    scene.remove(currentCollectible);
+                    currentCollectible = null;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = () => {
+            initThree();
+            renderer.render(scene, camera);
+
+            document.getElementById('start-btn').addEventListener('click', startGame);
+            document.getElementById('restart-btn').addEventListener('click', startGame);
+            resumeBtn.addEventListener('click', resumeAfterCheckpoint);
+            document.getElementById('sound-toggle-btn').addEventListener('click', toggleSound);
+            if (window.parent !== window) {
+                const b = document.getElementById('portal-back'); b.classList.remove('hidden');
+                b.addEventListener('click', () => window.parent.postMessage({ type: 'arked-close' }, '*'));
+                window.addEventListener('message', e => {
+                    const m = e.data || {};
+                    if (m.type === 'arked-ack') {
+                        const r = document.getElementById('portal-rank');
+                        r.textContent = m.saya ? `🏆 Rekod terbaik anda bulan ini: ${m.saya.skor} · Kedudukan #${m.saya.kedudukan} daripada ${m.saya.jumlah} pemain` : 'Skor disimpan.';
+                        r.classList.remove('hidden');
+                    }
+                });
+            }
+        };
+    </script>
+</body>
+</html>

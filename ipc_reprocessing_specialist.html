@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>IPC HTPN — Steri-Zap Reprocessing Specialist 3D</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Orbitron, Chakra Petch & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            htpn: {
+              void: '#030814',
+              surface: '#07162c',
+              card: '#0d223f',
+              border: '#1b3b64',
+              teal: '#0df2c9',
+              cyan: '#00d4ff',
+              laser: '#ff0055',
+              amber: '#ffb703',
+              purple: '#9d4edd',
+              success: '#00f59b'
+            }
+          },
+          fontFamily: {
+            arcade: ['Orbitron', 'sans-serif'],
+            tech: ['Chakra Petch', 'sans-serif'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Arcade CRT Scanlines & Cyber Atmosphere */
+    body {
+      background: radial-gradient(circle at 50% 20%, #0a1f3d 0%, #030814 85%);
+      min-height: 100vh;
+      user-select: none;
+      color: #f1f5f9;
+    }
+
+    .crt-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%);
+      background-size: 100% 4px;
+      z-index: 40;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    /* Laser Scanner animation */
+    .laser-line {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, #0df2c9, #00d4ff, transparent);
+      box-shadow: 0 0 12px #0df2c9;
+      animation: scanSweep 3.5s linear infinite;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    @keyframes scanSweep {
+      0% { top: 0%; opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    /* Screen Shake for incorrect answers */
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-8px, 6px); }
+      40% { transform: translate(8px, -6px); }
+      60% { transform: translate(-5px, -4px); }
+      80% { transform: translate(5px, 4px); }
+    }
+
+    .shake-hazard {
+      animation: screenShake 0.4s ease-in-out;
+      border-color: #ff0055 !important;
+      box-shadow: 0 0 25px rgba(255, 0, 85, 0.6) !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030814;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1b3b64;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0df2c9;
+    }
+  </style>
+<style>[onclick^="toggleAdminModal"]{display:none !important}</style>
+</head>
+<body class="flex flex-col min-h-screen font-sans antialiased text-slate-100 overflow-x-hidden">
+  <div class="crt-overlay"></div>
+
+  <script>
+    class SteriAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.bgmPlaying = false;
+        this.bgmTimer = null;
+        this.currentSector = 1;
+        this.totalSectors = 15;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      // Start Suspense Ascending BGM
+      startBGM() {
+        this.init();
+        if (this.muted || this.bgmPlaying) return;
+        this.bgmPlaying = true;
+        this.playPulseBeat();
+      }
+      stopBGM() {
+        this.bgmPlaying = false;
+        if (this.bgmTimer) clearTimeout(this.bgmTimer);
+      }
+      setSector(sec) {
+        this.currentSector = sec;
+      }
+      // Dynamic tempo and pitch ascending as level progresses from 1 to 15
+      playPulseBeat() {
+        if (!this.bgmPlaying || this.muted) return;
+        try {
+          const progress = (this.currentSector - 1) / (this.totalSectors - 1); // 0.0 to 1.0
+          // Base frequency rises from 65Hz to 160Hz; tempo intervals shrink from 750ms to 240ms
+          const baseFreq = 65 + (progress * 95);
+          const interval = Math.max(220, 750 - (progress * 480));
+          const t = this.ctx.currentTime;
+
+          // Bass Sub-Pulse
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(baseFreq, t);
+          osc1.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, t + 0.14);
+          gain1.gain.setValueAtTime(0.08 + (progress * 0.06), t);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + 0.14);
+
+          // High Tension Cyber Tick
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'triangle';
+          const tickFreq = 380 + (progress * 620);
+          osc2.frequency.setValueAtTime(tickFreq, t + 0.08);
+          gain2.gain.setValueAtTime(0.04 + (progress * 0.04), t + 0.08);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t + 0.08);
+          osc2.stop(t + 0.16);
+
+          this.bgmTimer = setTimeout(() => this.playPulseBeat(), interval);
+        } catch(e) {}
+      }
+      playBlip(freq = 600, dur = 0.08) {
+        if (this.muted) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + dur);
+        } catch(e) {}
+      }
+      playZap() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(1100, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.16);
+          gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.16);
+        } catch(e) {}
+      }
+      playSplash() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(550, this.ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.15);
+        } catch(e) {}
+      }
+      playCorrect() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const notes = [440, 554.37, 659.25, 880];
+          notes.forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime + i * 0.08);
+            gain.gain.setValueAtTime(0.14, this.ctx.currentTime + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.08 + 0.28);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + i * 0.08);
+            osc.stop(this.ctx.currentTime + i * 0.08 + 0.28);
+          });
+        } catch(e) {}
+      }
+      playFail() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(140, this.ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.3);
+        } catch(e) {}
+      }
+    }
+    const sfx = new SteriAudio();
+  </script>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="w-full bg-htpn-surface/90 border-b border-htpn-border sticky top-0 z-30 px-3 md:px-6 py-2.5 backdrop-blur-lg shadow-xl">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Arcade Tag -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="returnToLaunchpad()">
+        <div class="relative w-11 h-11 rounded-xl bg-gradient-to-br from-htpn-card via-htpn-surface to-htpn-void border-2 border-htpn-teal flex items-center justify-center text-htpn-teal shadow-lg shadow-htpn-teal/30">
+          <i class="fa-solid fa-crosshairs text-xl animate-pulse"></i>
+          <span class="absolute -top-1 -right-1 w-3 h-3 bg-htpn-laser rounded-full border-2 border-htpn-void animate-ping"></span>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] font-arcade tracking-wider text-htpn-teal uppercase font-bold">IPC HTPN KAJANG</span>
+            <span class="text-[9px] bg-rose-950/80 text-rose-300 border border-rose-600 px-1.5 py-0.2 rounded font-arcade font-extrabold animate-pulse">STERI-ZAP ARCADE</span>
+          </div>
+          <h1 class="text-sm md:text-lg font-black font-arcade tracking-wider text-white flex items-center gap-2">
+            REPROCESSING SPECIALIST <span class="text-xs font-tech text-cyan-300 hidden sm:inline">| Tactile 3D Combat Simulator</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Live Gamification Dials -->
+      <div class="flex items-center space-x-2 md:space-x-3 font-arcade text-xs">
+        
+        <!-- Zap Energy Streak Combo -->
+        <div class="bg-gradient-to-r from-rose-950/60 to-htpn-card border border-rose-500/40 px-3 py-1.5 rounded-xl flex items-center space-x-2 shadow-inner">
+          <i class="fa-solid fa-bolt-lightning text-rose-400 animate-bounce"></i>
+          <div>
+            <span class="text-[8px] text-slate-400 block font-tech leading-none">ZAP COMBO</span>
+            <span id="hud-combo" class="font-extrabold text-rose-300 text-sm">x1.0</span>
+          </div>
+        </div>
+
+        <!-- Score Dial -->
+        <div class="bg-htpn-card/90 border border-htpn-teal/40 px-3 py-1.5 rounded-xl flex items-center space-x-2 shadow-inner">
+          <i class="fa-solid fa-trophy text-amber-400"></i>
+          <div>
+            <span class="text-[8px] text-slate-400 block font-tech leading-none">TOTAL SCORE</span>
+            <span id="hud-score" class="font-extrabold text-htpn-teal text-sm md:text-base">0</span>
+          </div>
+        </div>
+
+        <!-- Level Indicator -->
+        <div class="bg-htpn-card/90 border border-htpn-border px-3 py-1.5 rounded-xl flex items-center space-x-2 shadow-inner">
+          <i class="fa-solid fa-shield-virus text-cyan-400"></i>
+          <div>
+            <span class="text-[8px] text-slate-400 block font-tech leading-none">SECTOR</span>
+            <span id="hud-level" class="font-extrabold text-white text-sm">1 / 15</span>
+          </div>
+        </div>
+
+        <!-- Audio & Tension BGM Toggle -->
+        <button id="btn-audio" onclick="toggleAudio()" class="h-9 px-2.5 rounded-xl bg-htpn-card border border-htpn-border flex items-center space-x-1.5 text-htpn-teal hover:border-htpn-teal transition active:scale-95" title="Toggle Sound & Tension BGM">
+          <i class="fa-solid fa-volume-high"></i>
+          <span class="text-[10px] font-arcade font-bold hidden sm:inline">BGM</span>
+        </button>
+
+        <!-- Question Bank Button -->
+        <button onclick="toggleAdminModal(true)" class="hidden md:flex items-center space-x-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-xl transition text-xs font-tech" title="Edit Question Bank">
+          <i class="fa-solid fa-database text-htpn-cyan"></i>
+          <span>Bank</span>
+        </button>
+
+        <!-- Hub Backlink -->
+        <a href="#" onclick="kembaliPortal(event)" class="px-3 py-2 bg-htpn-card hover:bg-htpn-border text-slate-200 border border-htpn-border rounded-xl transition text-xs font-tech flex items-center space-x-1">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="hidden sm:inline">Hub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Level Progress Ribbon -->
+  <div class="bg-htpn-surface/70 border-b border-htpn-border/80 py-1.5 px-3 overflow-x-auto">
+    <div id="level-dots-track" class="max-w-7xl mx-auto flex items-center gap-2 min-w-max text-xs font-arcade">
+      <!-- Injected Levels 1 to 15 -->
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col justify-center relative">
+
+    <!-- FLOATING BIO-THREAT TARGET LAYER (ZAP MECHANIC) -->
+    <div id="biohazard-radar" class="relative w-full mb-3 h-16 bg-gradient-to-r from-slate-950 via-htpn-card to-slate-950 border border-rose-500/30 rounded-2xl overflow-hidden shadow-inner flex items-center justify-between px-4">
+      <div class="flex items-center space-x-2 text-xs font-tech text-rose-400 pointer-events-none z-10">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <span class="font-bold tracking-wider font-arcade text-[10px]">BIO-THREAT RADAR:</span>
+        <span class="text-slate-400 hidden sm:inline">Tap floating pathogens to Steri-Zap & boost your multiplier!</span>
+      </div>
+      <div id="floating-microbe-container" class="absolute inset-0 pointer-events-auto overflow-hidden">
+        <!-- Pathogens injected via JS -->
+      </div>
+      <div class="z-10 font-arcade text-[10px] text-htpn-teal bg-black/60 px-2.5 py-1 rounded-lg border border-htpn-border pointer-events-none">
+        PATIENTS PROTECTED: <span id="radar-zapped-count" class="font-bold text-white">0</span>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: BRIEFING LAUNCHPAD -->
+    <div id="screen-launchpad" class="w-full">
+      <div class="bg-htpn-surface/90 border-2 border-htpn-teal/30 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+        <div class="laser-line"></div>
+        
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div class="inline-flex items-center space-x-2 bg-htpn-card border border-htpn-teal/50 px-4 py-1.5 rounded-full text-xs font-arcade text-htpn-teal shadow-lg shadow-htpn-teal/20">
+            <span class="w-2 h-2 rounded-full bg-htpn-teal animate-ping"></span>
+            <span>HTPN CSSD OPERATIONAL SIMULATOR</span>
+          </div>
+          <span class="text-xs text-slate-400 font-tech">HOSPITAL TENGKU PERMAISURI NORASHIKIN • KAJANG</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-8">
+          
+          <div class="lg:col-span-7">
+            <h2 class="text-3xl md:text-5xl font-black font-arcade text-white tracking-tight leading-none mb-3">
+              STERI-ZAP 3D
+              <span class="block text-xl md:text-3xl font-extrabold bg-gradient-to-r from-htpn-teal via-cyan-300 to-rose-400 bg-clip-text text-transparent mt-2">
+                Reprocessing Specialist Mission
+              </span>
+            </h2>
+            <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-6 font-sans">
+              Selamat datang, Pakar CSSD & Reprocessing HTPN! Alatan klinikal tercemar memerlukan dekontaminasi dan pensterilan mematuhi piawaian kebangsaan. Uji kemahiran anda merentasi 15 sektor: klasifikasi Spaulding, tangki rendaman kimia (HLD), autoklaf stim, ujian spora biologi, dan pengurusan stor steril.
+            </p>
+
+            <!-- Gameplay feature cards with authentic clinical equipment thumbnails -->
+            <div class="grid grid-cols-3 gap-3 font-tech text-xs mb-6">
+              <div class="bg-htpn-card/80 p-3 rounded-2xl border border-htpn-border flex flex-col items-center text-center group hover:border-htpn-teal transition">
+                <img src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=300&q=80" alt="Stethoscope" class="w-12 h-12 object-cover rounded-xl mb-2 border border-htpn-teal/40 group-hover:scale-105 transition" onerror="this.src='https://placehold.co/100x100/07162c/0df2c9?text=Stetho'">
+                <span class="text-slate-400 text-[10px]">SPAULDING</span>
+                <span class="text-white font-bold font-arcade text-[11px]">Real Assets</span>
+              </div>
+              <div class="bg-htpn-card/80 p-3 rounded-2xl border border-htpn-border flex flex-col items-center text-center group hover:border-htpn-teal transition">
+                <img src="https://images.unsplash.com/photo-1583912267670-6575ad3736df?auto=format&fit=crop&w=300&q=80" alt="Soaking Vat" class="w-12 h-12 object-cover rounded-xl mb-2 border border-cyan-400/40 group-hover:scale-105 transition" onerror="this.src='https://placehold.co/100x100/07162c/00d4ff?text=Soak'">
+                <span class="text-slate-400 text-[10px]">SOAKING TANK</span>
+                <span class="text-white font-bold font-arcade text-[11px]">Live Immersion</span>
+              </div>
+              <div class="bg-htpn-card/80 p-3 rounded-2xl border border-htpn-border flex flex-col items-center text-center group hover:border-htpn-teal transition">
+                <img src="https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=300&q=80" alt="Autoclave" class="w-12 h-12 object-cover rounded-xl mb-2 border border-rose-400/40 group-hover:scale-105 transition" onerror="this.src='https://placehold.co/100x100/07162c/ff0055?text=Sterile'">
+                <span class="text-slate-400 text-[10px]">ACCREDITATION</span>
+                <span class="text-white font-bold font-arcade text-[11px]">Official Badge</span>
+              </div>
+            </div>
+
+            <!-- Start Controls -->
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button onclick="startGame()" class="flex-1 bg-gradient-to-r from-htpn-teal via-cyan-400 to-emerald-400 hover:brightness-110 text-slate-950 font-arcade font-black py-4 px-8 rounded-2xl shadow-xl shadow-htpn-teal/25 transition flex items-center justify-center space-x-3 text-base tracking-wider active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-play text-xl"></i>
+                <span>INITIALIZE MISSION</span>
+              </button>
+              <button onclick="toggleAdminModal(true)" class="px-6 py-4 bg-htpn-card hover:bg-htpn-border border border-htpn-border text-slate-200 font-tech font-bold rounded-2xl transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-sliders text-cyan-400"></i>
+                <span>Question Bank</span>
+              </button>
+            </div>
+          </div>
+          <!-- Hero Showcase: Real CSSD Decontamination Suite Station -->
+          <div class="lg:col-span-5 flex flex-col items-center">
+            <div class="w-full h-80 rounded-3xl bg-gradient-to-b from-htpn-card to-htpn-surface border-2 border-htpn-teal/40 relative overflow-hidden shadow-2xl flex flex-col items-center justify-center p-3 group">
+              <!-- Actual CSSD decontamination multi-basin sink & PPE staff washing station -->
+              <img src="https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=900&q=80" alt="HTPN CSSD Decontamination Suite" class="w-full h-full object-cover rounded-2xl brightness-90 group-hover:scale-105 group-hover:brightness-100 transition duration-700 shadow-inner" onerror="this.src='https://placehold.co/600x400/07162c/0df2c9?text=CSSD+Decontamination+Room'">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none"></div>
+              
+              <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs font-tech bg-slate-950/85 p-3 rounded-xl border border-htpn-border backdrop-blur-md">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-sink text-htpn-teal"></i>
+                  <span class="text-white font-bold font-arcade">DECONTAMINATION AREA</span>
+                </div>
+                <span class="text-[10px] text-cyan-300 font-mono">HTPN CSSD REPROCESSING ZONE</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Telemetry bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-htpn-void/90 p-4 rounded-2xl border border-htpn-border text-center font-arcade">
+          <div>
+            <span class="text-[9px] text-slate-400 font-tech">SECTORS TO CLEAR</span>
+            <span class="text-base font-bold text-white block">15 Levels</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 font-tech">TOTAL POINTS</span>
+            <span class="text-base font-bold text-htpn-cyan block">1500+ PTS</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 font-tech">STATUS</span>
+            <span id="launchpad-cleared" class="text-base font-bold text-htpn-teal block">0 / 15 Cleared</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 font-tech">OFFICIAL BADGE</span>
+            <span id="launchpad-badge" class="text-xs font-bold text-slate-400 block pt-1">LOCKED</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SCREEN 2: ACTIVE 3D TACTICAL GAMEPLAY MATRIX -->
+    <div id="screen-gameplay" class="w-full hidden">
+      <div id="game-card-container" class="bg-htpn-surface/95 border-2 border-htpn-teal/40 rounded-3xl p-4 md:p-8 shadow-2xl relative backdrop-blur-xl">
+        
+        <!-- Header Info -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-htpn-border">
+          <div class="flex items-center space-x-3">
+            <span id="level-badge" class="px-3.5 py-1 bg-htpn-card border border-htpn-teal text-htpn-teal font-arcade text-xs rounded-xl font-bold shadow-md shadow-htpn-teal/20">
+              SECTOR 01
+            </span>
+            <span id="difficulty-badge" class="text-[10px] font-arcade text-cyan-300 bg-cyan-950/70 px-2.5 py-1 rounded-lg border border-cyan-700">
+              BASIC
+            </span>
+            <span class="text-[11px] font-tech text-slate-400 hidden sm:inline">
+              <i class="fa-solid fa-hospital mr-1 text-htpn-teal"></i> HTPN Sterilisation Protocol
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-4 font-arcade text-xs">
+            <div class="text-slate-400">
+              POINTS: <span id="level-points" class="text-amber-400 font-bold">100</span>
+            </div>
+            <div class="text-slate-400">
+              ATTEMPT: <span id="level-attempt" class="text-white font-bold">1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- HERO GAMESTAGE: Real Clinical Visual & Interactive Soaking Tank -->
+        <div class="mb-5 bg-gradient-to-b from-htpn-void via-htpn-card to-htpn-surface border border-htpn-teal/30 rounded-2xl p-4 relative overflow-hidden shadow-inner">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+            
+            <!-- Left: Real Clinical Photo with HUD Overlays & Micro-Actions -->
+            <div class="lg:col-span-6 relative h-64 sm:h-72 rounded-2xl overflow-hidden border border-htpn-border shadow-xl group">
+              <!-- Real Clinical Image -->
+              <img id="stage-real-image" src="" alt="Clinical Reprocessing Item" class="w-full h-full object-cover brightness-95 group-hover:scale-105 transition duration-700" onerror="this.src='https://placehold.co/600x400/07162c/0df2c9?text=Clinical+Device'">
+              
+              <!-- Laser Scanner Overlay Line -->
+              <div class="laser-line"></div>
+
+              <!-- HUD Metadata Tags -->
+              <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+                <span id="stage-asset-name" class="text-xs font-arcade font-bold bg-slate-950/85 text-htpn-teal border border-htpn-teal/60 px-3 py-1 rounded-xl shadow-lg backdrop-blur-md">
+                  MEDICAL ASSET
+                </span>
+                <span id="stage-risk-label" class="text-[10px] font-tech bg-cyan-950/80 text-cyan-300 border border-cyan-700 px-2.5 py-0.5 rounded-lg w-max backdrop-blur-md">
+                  HTPN CLINICAL SPEC
+                </span>
+              </div>
+
+              <!-- Live Watermark -->
+              <div class="absolute bottom-3 right-3 text-[10px] font-mono bg-black/70 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-md pointer-events-none">
+                <i class="fa-solid fa-barcode mr-1 text-htpn-teal"></i> RFID: CSSD-HTPN-VALIDATED
+              </div>
+            </div>
+
+            <!-- Right: Interactive Challenge Directive & Soaking Sim -->
+            <div class="lg:col-span-6 flex flex-col justify-between h-full space-y-3">
+              <div>
+                <h3 id="stage-title" class="text-xl md:text-2xl font-black font-arcade text-white tracking-wide mb-1"></h3>
+                <p id="stage-objective" class="text-xs text-cyan-300 font-tech mb-3 leading-relaxed flex items-center gap-1.5">
+                  <i class="fa-solid fa-bullseye text-htpn-teal"></i>
+                  <span>Objective loading...</span>
+                </p>
+                <div id="stage-instruction" class="text-slate-200 text-xs md:text-sm leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-htpn-border">
+                </div>
+              </div>
+
+              <!-- REAL-TIME CHEMICAL SOAKING VAT (Appears on soaking/HLD questions) -->
+              <div id="soaking-tank-sim" class="hidden p-3.5 bg-gradient-to-r from-cyan-950/80 to-htpn-card border border-cyan-400/50 rounded-2xl relative overflow-hidden shadow-lg">
+                <div class="flex items-center justify-between text-xs font-arcade mb-2">
+                  <span class="text-cyan-300 font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-flask-vial animate-spin"></i> HLD SOAKING TANK
+                  </span>
+                  <span id="tank-timer-val" class="text-amber-300 font-bold font-mono text-sm bg-black/50 px-2 py-0.5 rounded border border-amber-500/50">20:00 MIN</span>
+                </div>
+                
+                <!-- Fluid Tub with Floating Bubbles -->
+                <div class="w-full bg-slate-950 h-6 rounded-xl overflow-hidden border border-cyan-800 relative flex items-center px-2">
+                  <div id="tank-fluid-level" class="absolute inset-y-0 left-0 bg-gradient-to-r from-htpn-teal to-cyan-400 w-0 transition-all duration-300 opacity-70"></div>
+                  <!-- Floating bubbles inside bar -->
+                  <div class="absolute inset-0 flex justify-around pointer-events-none opacity-60">
+                    <div class="w-2 h-2 rounded-full bg-white animate-ping"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-cyan-200 animate-pulse"></div>
+                    <div class="w-2 h-2 rounded-full bg-white animate-ping"></div>
+                  </div>
+                  <span class="relative z-10 text-[9px] font-arcade text-white tracking-widest uppercase">ENZYMATIC IMMERSION</span>
+                </div>
+
+                <div class="flex justify-between items-center mt-2.5 text-[10px] font-tech text-slate-300">
+                  <span>Standard Benchmark: ≥ 20 Min</span>
+                  <button onclick="accelerateSoakTimer()" class="text-cyan-300 hover:text-white px-2.5 py-1 bg-htpn-surface border border-cyan-700 rounded-lg hover:border-cyan-400 transition font-arcade active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-forward-fast"></i> Fast Soak x15
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC INTERACTION ARENA (Questions, Cards, Sequence, Classifiers) -->
+        <div id="interactive-arena" class="my-5 min-h-[180px]">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <!-- Hint Section -->
+        <div id="hint-section" class="mb-4">
+          <button id="btn-hint" onclick="revealHint()" class="text-xs font-arcade text-amber-400 hover:text-amber-300 flex items-center space-x-2 transition cursor-pointer">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>REQUEST INTEL ADVISORY (-5 PTS)</span>
+          </button>
+          <div id="hint-box" class="hidden mt-2 p-3 bg-amber-950/60 border border-amber-500/50 rounded-xl text-xs text-amber-200 font-tech leading-relaxed">
+          </div>
+        </div>
+
+        <!-- Resolution Feedback Tray -->
+        <div id="feedback-tray" class="hidden my-4 p-4 rounded-2xl border transition-all">
+          <div class="flex items-start space-x-3">
+            <div id="feedback-icon" class="text-2xl mt-0.5"></div>
+            <div class="flex-1">
+              <h5 id="feedback-title" class="font-black font-arcade text-sm mb-1"></h5>
+              <p id="feedback-text" class="text-xs text-slate-200 leading-relaxed font-sans"></p>
+              <div id="feedback-source" class="mt-2 text-[10px] font-mono text-cyan-300"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-htpn-border">
+          <button onclick="retryCurrentLevel()" class="px-4 py-2.5 bg-htpn-card hover:bg-htpn-border text-slate-300 rounded-xl text-xs font-arcade transition flex items-center space-x-2 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>RESET STAGE</span>
+          </button>
+
+          <div class="flex items-center space-x-3">
+            <button id="btn-submit" onclick="submitCurrentAnswer()" class="px-7 py-3 bg-gradient-to-r from-htpn-teal to-htpn-cyan hover:brightness-110 text-slate-950 font-black font-arcade rounded-xl text-xs tracking-wider transition shadow-lg shadow-htpn-teal/20 flex items-center space-x-2 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-check"></i>
+              <span>VERIFY PROTOCOL</span>
+            </button>
+            
+            <button id="btn-next" onclick="goToNextLevel()" class="hidden px-8 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-110 text-slate-950 font-black font-arcade rounded-xl text-xs tracking-wider transition shadow-xl shadow-emerald-400/30 flex items-center space-x-2 animate-bounce active:scale-95 cursor-pointer">
+              <span>NEXT SECTOR</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SCREEN 3: MISSION DEBRIEF & CERTIFICATION BADGE -->
+    <div id="screen-summary" class="w-full hidden">
+      <div class="bg-htpn-surface border-2 border-htpn-teal/50 rounded-3xl p-6 md:p-10 shadow-2xl relative text-center backdrop-blur-xl">
+        
+        <div class="w-28 h-28 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-htpn-teal via-cyan-400 to-rose-400 p-1 shadow-2xl animate-bounce">
+          <div class="w-full h-full bg-slate-950 rounded-3xl flex items-center justify-center text-htpn-teal text-5xl">
+            <i class="fa-solid fa-award"></i>
+          </div>
+        </div>
+
+        <span id="sum-kicker" class="text-xs font-arcade tracking-widest text-htpn-teal uppercase font-bold">ALL 15 CSSD PROTOCOLS VALIDATED</span>
+        <h2 id="sum-title" class="text-3xl md:text-4xl font-black font-arcade text-white mt-1 mb-2">REPROCESSING SPECIALIST ACCREDITED</h2>
+        <p id="sum-text" class="text-slate-300 text-xs md:text-sm max-w-xl mx-auto mb-6 font-sans">
+          Tahniah, Pakar! Anda telah membuktikan penguasaan dalam klasifikasi Spaulding, tangki rendaman berenjim, disinfeksi tahap tinggi (HLD), pemantauan autoklaf, serta pengurusan stor steril di Hospital Tengku Permaisuri Norashikin (HTPN).
+        </p>
+
+        <!-- Official Badge Display -->
+        <div id="sum-badge" class="max-w-md mx-auto bg-gradient-to-r from-htpn-card to-slate-950 border-2 border-htpn-teal rounded-2xl p-5 mb-6 text-left flex items-center space-x-4 shadow-2xl">
+          <div class="w-16 h-16 rounded-2xl bg-htpn-surface border border-htpn-teal flex items-center justify-center text-htpn-teal text-3xl shadow-inner">
+            <i class="fa-solid fa-shield-virus"></i>
+          </div>
+          <div>
+            <div class="text-[9px] font-arcade text-htpn-teal uppercase font-bold tracking-wider">HTPN OFFICIAL BADGE AWARDED</div>
+            <h4 class="font-black font-arcade text-white text-base">REPROCESSING SPECIALIST</h4>
+            <p class="text-xs text-slate-400 font-tech">Disinfection & Sterilisation Master (HTPN IPC Standard)</p>
+            <div id="badge-date" class="text-[10px] font-mono text-cyan-300 mt-1"></div>
+          </div>
+        </div>
+
+        <!-- Telemetry Summary -->
+        <div class="grid grid-cols-3 gap-3 max-w-md mx-auto font-arcade text-center mb-8">
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-htpn-border">
+            <span class="text-[9px] text-slate-400 font-tech block">FINAL SCORE</span>
+            <span id="final-score" class="text-xl font-bold text-htpn-cyan">1500</span>
+          </div>
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-htpn-border">
+            <span class="text-[9px] text-slate-400 font-tech block">FIRST PASSES</span>
+            <span id="final-first-attempts" class="text-xl font-bold text-htpn-teal">15 / 15</span>
+          </div>
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-htpn-border">
+            <span class="text-[9px] text-slate-400 font-tech block">ZAPS MADE</span>
+            <span id="final-zaps" class="text-xl font-bold text-rose-400">0</span>
+          </div>
+        </div>
+
+        <div id="portal-actions" class="hidden flex-wrap items-center justify-center gap-3 mb-4"></div>
+        <div id="sum-actions" class="flex flex-wrap items-center justify-center gap-4">
+          <button onclick="replayGame()" class="px-6 py-3 bg-htpn-card hover:bg-htpn-border text-slate-200 border border-htpn-border rounded-xl font-arcade text-xs transition active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-rotate-left mr-1.5"></i> Review Sectors
+          </button>
+          <a href="#" onclick="kembaliPortal(event)" class="px-8 py-3 bg-gradient-to-r from-htpn-teal to-htpn-cyan text-slate-950 font-black font-arcade text-xs rounded-xl transition shadow-xl hover:brightness-110 active:scale-95 cursor-pointer">
+            Return to HTPN Training Hub
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ADMIN QUESTION BANK MODAL -->
+  <div id="modal-admin" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 md:p-6">
+    <div class="bg-htpn-surface border border-htpn-border w-full max-w-4xl max-h-[90vh] rounded-3xl flex flex-col shadow-2xl overflow-hidden">
+      
+      <div class="p-5 border-b border-htpn-border flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-database text-htpn-teal"></i>
+          <h3 class="font-bold font-arcade text-white text-base">HTPN Reprocessing Question Bank</h3>
+        </div>
+        <button onclick="toggleAdminModal(false)" class="text-slate-400 hover:text-white px-2 py-1 cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Tools Bar -->
+      <div class="p-4 bg-htpn-card/70 border-b border-htpn-border flex flex-wrap items-center justify-between gap-3 text-xs font-tech">
+        <div class="flex items-center space-x-2">
+          <button onclick="exportJSON()" class="px-3 py-1.5 bg-htpn-border hover:bg-htpn-teal hover:text-black text-slate-200 rounded-lg transition flex items-center space-x-1 cursor-pointer">
+            <i class="fa-solid fa-download"></i>
+            <span>Export JSON</span>
+          </button>
+          
+          <label class="px-3 py-1.5 bg-htpn-border hover:bg-htpn-cyan hover:text-black text-slate-200 rounded-lg transition cursor-pointer flex items-center space-x-1">
+            <i class="fa-solid fa-upload"></i>
+            <span>Import JSON</span>
+            <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
+          </label>
+
+          <button onclick="restoreDefaults()" class="px-3 py-1.5 bg-rose-950/70 text-rose-300 border border-rose-800 rounded-lg hover:bg-rose-900 transition cursor-pointer">
+            Restore Defaults
+          </button>
+        </div>
+
+        <span class="text-slate-400">Total Operational Sectors: <strong id="admin-count" class="text-htpn-teal">15</strong></span>
+      </div>
+
+      <!-- Question List Body -->
+      <div id="admin-questions-list" class="flex-1 overflow-y-auto p-4 space-y-3 font-sans text-xs">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Footer Bar -->
+      <div class="p-4 border-t border-htpn-border bg-htpn-card/60 flex items-center justify-between text-xs font-tech">
+        <span class="text-slate-400">Edits persist locally in client runtime.</span>
+        <button onclick="toggleAdminModal(false)" class="px-5 py-2 bg-htpn-teal text-slate-950 font-bold font-arcade rounded-lg hover:bg-cyan-300 transition cursor-pointer">
+          Close Editor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME DATA: 15 CLINICAL SECTORS WITH REAL IMAGES -->
+  <script>
+    const INITIAL_SECTORS = [
+      {
+        id: "q1",
+        levelId: 1,
+        title: "Sort It! — Spaulding Classification",
+        questionType: "classification",
+        learningObjective: "Classify clinical assets into Spaulding categories to determine required reprocessing intensity.",
+        questionText: "Assign each real clinical device into its valid Spaulding infection risk category.",
+        assetName: "Acoustic Stethoscope, Bronchoscope & Scalpel",
+        imageUrl: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN IPC Reprocessing Guidelines - Slide 4 (Spaulding Classification)",
+        difficulty: "Basic",
+        points: 100,
+        active: true,
+        order: 1,
+        hint: "Stethoscopes touch intact skin only; Bronchoscopes touch mucous membranes; Scalpels enter vascular beds.",
+        activityItems: [
+          { id: "i1", name: "Acoustic Stethoscope", note: "Contacts intact patient skin only", correctCategory: "non-critical" },
+          { id: "i2", name: "Flexible Bronchoscope", note: "Enters respiratory mucous membranes", correctCategory: "semi-critical" },
+          { id: "i3", name: "Surgical Scalpel & Forceps", note: "Enters sterile tissue & vascular system", correctCategory: "critical" }
+        ],
+        categories: [
+          { id: "non-critical", label: "Non-Critical (Low Risk)" },
+          { id: "semi-critical", label: "Semi-Critical (Moderate Risk)" },
+          { id: "critical", label: "Critical (High Risk)" }
+        ],
+        explanation: "Correct Spaulding distribution: Non-critical items (stethoscope) contact intact skin only (requires low/intermediate disinfection). Semi-critical (bronchoscope) touches intact mucous membranes (requires HLD). Critical items (scalpel) breach sterile tissue or blood vessels and must be sterilised."
+      },
+      {
+        id: "q2",
+        levelId: 2,
+        title: "Reprocessing Race — Decontamination Sequence",
+        questionType: "sequence",
+        learningObjective: "Arrange the decontamination sequence in the dedicated reprocessing area in chronological order.",
+        questionText: "Arrange the fundamental decontamination stages carried out in the Reprocessing Area in the required order. (Remember: no cleaning is performed at bedside).",
+        assetName: "CSSD Multi-Bay Decontamination Wash Sinks",
+        imageUrl: "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=800&q=80",
+        showSoakTimer: true,
+        sourceReference: "HTPN Decontamination Protocol - Slide 8",
+        difficulty: "Basic",
+        points: 100,
+        active: true,
+        order: 2,
+        hint: "In the decontamination area: items are soaked, thoroughly cleaned, rinsed, and dried with lint-free cloth.",
+        sequenceItems: [
+          { id: "s1", label: "1. Soaking / Immersion in enzymatic solution (Reprocessing Area)", correctRank: 1 },
+          { id: "s2", label: "2. Thorough Cleaning & Manual Brushing (Reprocessing Sinks)", correctRank: 2 },
+          { id: "s3", label: "3. Rinsing with treated clean water", correctRank: 3 },
+          { id: "s4", label: "4. Drying with lint-free cloth", correctRank: 4 }
+        ],
+        explanation: "The mandatory decontamination sequence in the Reprocessing Area is: Soaking → Cleaning → Rinsing → Drying. No cleaning is performed at the bedside. Organic matter such as blood and proteins inactivates chemical disinfectants and shields microbes from steam penetration."
+      },
+      {
+        id: "q3",
+        levelId: 3,
+        title: "Match the Disinfectant",
+        questionType: "matching",
+        learningObjective: "Match disinfectants to validated clinical applications per HTPN policy.",
+        questionText: "Match each chemical disinfectant bottle to its approved clinical application.",
+        assetName: "Disinfectant Chemical Vials & Bottles",
+        imageUrl: "https://images.unsplash.com/photo-1603555501671-8f96b3fce8b4?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Disinfection Guidelines - Table 3",
+        difficulty: "Intermediate",
+        points: 100,
+        active: true,
+        order: 3,
+        hint: "Alcohol is for quick surface evaporation; Hypochlorite treats blood bio-spills; Glutaraldehyde is an immersion liquid.",
+        matchPairs: [
+          { id: "m1", chemical: "70% Isopropyl Alcohol", application: "Clean non-critical surface & stethoscope disinfection" },
+          { id: "m2", chemical: "Sodium Hypochlorite (Bleach)", application: "Blood spill containment & environmental disinfection" },
+          { id: "m3", chemical: "2% Glutaraldehyde / OPA", application: "High-Level Disinfection of compatible immersion endoscopes" }
+        ],
+        explanation: "70% alcohol is effective for smooth non-critical surfaces and diagnostic gear. Sodium hypochlorite is standard for blood/body fluid spills. 2% Glutaraldehyde/OPA serves as High-Level Disinfectant (HLD) for compatible semi-critical immersible scopes."
+      },
+      {
+        id: "q4",
+        levelId: 4,
+        title: "Choose the Method — Heat vs Moisture",
+        questionType: "mcq",
+        learningObjective: "Select validated sterilisation methods based on device thermal tolerance.",
+        questionText: "What is the primary, gold-standard method for sterilising heat-resistant surgical instruments?",
+        assetName: "Hospital Steam Sterilizer Chamber",
+        imageUrl: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Sterilisation Standard - Slide 12",
+        difficulty: "Basic",
+        points: 100,
+        active: true,
+        order: 4,
+        hint: "High-pressure saturated steam is non-toxic, rapid, and universally validated for steel instruments.",
+        options: [
+          { id: "a", label: "Immersion in 70% alcohol for 15 minutes" },
+          { id: "b", label: "Steam under pressure (Autoclaving) where compatible and validated", isCorrect: true },
+          { id: "c", label: "Low-temperature dry dusting" },
+          { id: "d", label: "Ultraviolet light box disinfection" }
+        ],
+        explanation: "Steam under pressure (autoclaving) is the primary validated sterilisation method for all heat- and moisture-resistant critical instruments. It destroys all microorganisms including spores."
+      },
+      {
+        id: "q5",
+        levelId: 5,
+        title: "Time Attack — High-Level Disinfection Timer",
+        questionType: "mcq",
+        learningObjective: "Recall the benchmark HLD contact time from the training slides while noting IFU variance.",
+        questionText: "According to the HTPN training slides, what is the stated benchmark immersion contact time for High-Level Disinfection (HLD)?",
+        assetName: "Endoscope Chemical Immersion Bath",
+        imageUrl: "https://images.unsplash.com/photo-1583912267670-6575ad3736df?auto=format&fit=crop&w=800&q=80",
+        showSoakTimer: true,
+        sourceReference: "HTPN HLD Policy - Slide 15",
+        difficulty: "Intermediate",
+        points: 100,
+        active: true,
+        order: 5,
+        hint: "Effective mycobactericidal chemical immersion requires at least 20 minutes.",
+        options: [
+          { id: "a", label: "At least 20 minutes (subject to product IFU & local policy)", isCorrect: true },
+          { id: "b", label: "Exactly 3 minutes" },
+          { id: "c", label: "5 minutes" },
+          { id: "d", label: "12 hours overnight" }
+        ],
+        explanation: "The training slides state at least 20 minutes. Note: In clinical application, actual contact time is determined by the specific chemical agent, temperature, concentration, and device manufacturer Instructions for Use (IFU)."
+      },
+      {
+        id: "q6",
+        levelId: 6,
+        title: "Kill the Germs — Disinfection vs Sterilisation",
+        questionType: "mcq",
+        learningObjective: "Distinguish microbiological kill capabilities between disinfection and sterilisation.",
+        questionText: "Which statement accurately describes the biological kill threshold distinguishing disinfection from sterilisation?",
+        assetName: "Bacterial Endospore Micrograph View",
+        imageUrl: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "Microbiology in IPC - HTPN Module 1",
+        difficulty: "Intermediate",
+        points: 100,
+        active: true,
+        order: 6,
+        hint: "Bacterial spores represent the highest resistance echelon in medical microbiology.",
+        options: [
+          { id: "a", label: "Disinfection destroys all vegetative microorganisms but does NOT reliably destroy bacterial endospores or prions; Sterilisation destroys all forms of microbial life including spores.", isCorrect: true },
+          { id: "b", label: "Disinfection and sterilisation are biologically identical terms." },
+          { id: "c", label: "Disinfection destroys prions, whereas sterilisation does not." },
+          { id: "d", label: "Sterilisation only reduces microbial bioburden by 50%." }
+        ],
+        explanation: "Disinfection reduces pathogenic microbes but does not eliminate high numbers of bacterial endospores or prions. Sterilisation is the absolute elimination of all microbial life, including resistant bacterial spores and prions under validated parameters."
+      },
+      {
+        id: "q7",
+        levelId: 7,
+        title: "Spot the Error — Hazard Hunter",
+        questionType: "spot_error",
+        learningObjective: "Identify unsafe decontamination and soaking practices in the CSSD.",
+        questionText: "Identify the critical UNSAFE practice in this decontamination log.",
+        assetName: "CSSD Wash Sinks & Instrument Inspection",
+        imageUrl: "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN CSSD Errors & Safety Guidelines",
+        difficulty: "Intermediate",
+        points: 100,
+        active: true,
+        order: 7,
+        hint: "Soaking surgical steel in corrosive solutions overnight damages equipment and facilitates biofilms.",
+        options: [
+          { id: "a", label: "Instruments were securely transported in a closed container to the decontamination room for processing." },
+          { id: "b", label: "Delicate surgical instruments were left soaking overnight in corrosive saline/disinfectant solution.", isCorrect: true },
+          { id: "c", label: "Personnel wore protective face shields and heavy-duty nitrile gloves in the decontamination room." },
+          { id: "d", label: "Lumen instruments were inspected with a lighted magnifying loupe at the inspection table." }
+        ],
+        explanation: "Unsafe practice detected! Prolonged or overnight soaking promotes pitting, corrosion, and biofilm accumulation on stainless steel, and increases vapor exposure to personnel. Devices must be cleaned promptly in the decontamination area and dried according to validated IFU."
+      },
+      {
+        id: "q8",
+        levelId: 8,
+        title: "PPE Up! — Reprocessing Defense",
+        questionType: "ppe_selection",
+        learningObjective: "Select appropriate PPE for manual decontamination rooms per risk assessment.",
+        questionText: "Select the required complete PPE ensemble for manual endoscope scrubbing and chemical immersion in the Decontamination Area.",
+        assetName: "Full Personal Protective Equipment Ensemble",
+        imageUrl: "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN PPE Standard Operating Procedure - Decontamination",
+        difficulty: "Basic",
+        points: 100,
+        active: true,
+        order: 8,
+        hint: "Staff must guard against both fluid biohazard splashing and chemical inhalation.",
+        options: [
+          { id: "a", label: "Standard examination gloves and paper surgical mask only" },
+          { id: "b", label: "Heavy-duty fluid-resistant gloves, fluid-impermeable gown/apron, full face shield/eye protection, and respiratory protection", isCorrect: true },
+          { id: "c", label: "Sterile surgical gloves and cloth lab coat" },
+          { id: "d", label: "Shoe covers only" }
+        ],
+        explanation: "Manual decontamination involves biohazard aerosols and chemical vapors. Standard safety demands heavy-duty chemical-resistant gloves, fluid-impermeable apron/gown, full face shield/goggles, and respiratory protection in a well-ventilated decontamination room."
+      },
+      {
+        id: "q9",
+        levelId: 9,
+        title: "Critical or Not? — Vascular Implements",
+        questionType: "mcq",
+        learningObjective: "Recognize vascular instrumentation as critical requiring absolute sterilisation.",
+        questionText: "A cardiac catheter guide wire enters the patient's vascular system. What is its Spaulding classification and required reprocessing?",
+        assetName: "Surgical Catheter & Reprocessing Setup",
+        imageUrl: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Spaulding Risk Decision Tree",
+        difficulty: "Basic",
+        points: 100,
+        active: true,
+        order: 9,
+        hint: "Blood vessels are completely sterile tissue planes.",
+        options: [
+          { id: "a", label: "Semi-critical: requires High-Level Disinfection" },
+          { id: "b", label: "Critical: requires Sterilisation using a validated compatible method", isCorrect: true },
+          { id: "c", label: "Non-critical: wipe with alcohol swab" },
+          { id: "d", label: "Environmental: rinse in warm tap water" }
+        ],
+        explanation: "Any device that enters sterile tissue or the vascular system is classified as Critical. Contamination poses severe bacteremia/sepsis risks. It demands validated sterilisation."
+      },
+      {
+        id: "q10",
+        levelId: 10,
+        title: "What Comes Next? — Full Cycle Ordering",
+        questionType: "sequence",
+        learningObjective: "Reinforce the sequential steps within the reprocessing facility from intake to storage.",
+        questionText: "Sequence the end-to-end instrument reprocessing cycle correctly in the CSSD (remembering cleaning strictly occurs in the decontamination room).",
+        assetName: "CSSD Decontamination & Packing Workflow",
+        imageUrl: "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Reprocessing Flowchart - Slide 20",
+        difficulty: "Intermediate",
+        points: 100,
+        active: true,
+        order: 10,
+        hint: "Cleaning always precedes inspection and packaging; wet packages cause failed cycles.",
+        sequenceItems: [
+          { id: "p1", label: "1. Enclosed transport to Decontamination Room & soaking/immersion", correctRank: 1 },
+          { id: "p2", label: "2. Manual/mechanical cleaning & lumen brushing", correctRank: 2 },
+          { id: "p3", label: "3. Rinsing & thorough drying with lint-free cloth/air", correctRank: 3 },
+          { id: "p4", label: "4. Inspection, packaging & sterilisation", correctRank: 4 }
+        ],
+        explanation: "The complete pipeline is: Enclosed transport to Decontamination Room → Cleaning & Flushing → Rinsing/Drying → Inspection, Packaging, and Sterilisation. No cleaning is done at bedside; all wet cleaning occurs in the designated decontamination area."
+      },
+      {
+        id: "q11",
+        levelId: 11,
+        title: "Monitoring Master — Quality Triad",
+        questionType: "matching",
+        learningObjective: "Distinguish physical, chemical, and biological sterilisation monitoring.",
+        questionText: "Match each quality assurance monitoring method to what it directly evaluates.",
+        assetName: "Biological Spore Test Ampoules & Chemical Strips",
+        imageUrl: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Steriliser QA & Verification Standard",
+        difficulty: "Advanced",
+        points: 100,
+        active: true,
+        order: 11,
+        hint: "Biological tests bacterial spore kill; Chemical uses temperature/time indicators; Physical checks gauges.",
+        matchPairs: [
+          { id: "mon1", chemical: "Physical / Mechanical Monitoring", application: "Real-time autoclave sensor readouts (Time, Temp & Pressure)" },
+          { id: "mon2", chemical: "Chemical Indicators (Type 5 / 6)", application: "Color-change strips inside packs responding to critical parameters" },
+          { id: "mon3", chemical: "Biological Indicators (BI)", application: "Spore test vials (Geobacillus stearothermophilus) confirming microbial kill" }
+        ],
+        explanation: "All three monitoring methods are complementary! Physical monitors track machine gauges. Chemical indicators verify steam penetration inside individual packs. Biological indicators provide direct microbiological proof of spore destruction."
+      },
+      {
+        id: "q12",
+        levelId: 12,
+        title: "Heat or No Heat? — Technology Matching",
+        questionType: "mcq",
+        learningObjective: "Select low-temperature sterilisation for heat-sensitive equipment.",
+        questionText: "An advanced laparoscopic camera system with heat-sensitive optics cannot withstand temperatures above 55°C. Which validated sterilisation method should be selected?",
+        assetName: "Laparoscopic Surgical Optics & Camera",
+        imageUrl: "https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Equipment Compatibility Matrix - Section 4",
+        difficulty: "Intermediate",
+        points: 100,
+        active: true,
+        order: 12,
+        hint: "Steam operates above 121°C–134°C, which would destroy heat-sensitive electronics.",
+        options: [
+          { id: "a", label: "Steam autoclave at 134°C for 3.5 minutes" },
+          { id: "b", label: "Hydrogen Peroxide Gas Plasma / Low-Temperature Vapour sterilisation", isCorrect: true },
+          { id: "c", label: "Dry heat hot air oven at 160°C" },
+          { id: "d", label: "Boiling water tank" }
+        ],
+        explanation: "Heat-sensitive devices require validated low-temperature methods such as Hydrogen Peroxide Gas Plasma or low-temperature vapor. Steam or dry heat will permanently damage fiber optics and internal cement."
+      },
+      {
+        id: "q13",
+        levelId: 13,
+        title: "Storage Master — CSSD Clearances",
+        questionType: "classification",
+        learningObjective: "Identify exact physical clearance distances for sterile storage areas.",
+        questionText: "Assign each sterile stock storage parameter to its mandatory value from the training slides.",
+        assetName: "Hospital Sterile Stock Cleanroom Shelving",
+        imageUrl: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN Sterile Store Room Guidelines - Slide 28",
+        difficulty: "Advanced",
+        points: 100,
+        active: true,
+        order: 13,
+        hint: "Floor clearance is at least 25 cm; ceiling/sprinkler clearance is at least 44 cm; wall is at least 5 cm.",
+        activityItems: [
+          { id: "st1", name: "Clearance from floor", note: "Prevents contamination during floor mopping", correctCategory: "25cm" },
+          { id: "st2", name: "Clearance from ceiling / sprinklers", note: "Ensures fire suppression & airflow", correctCategory: "44cm" },
+          { id: "st3", name: "Clearance from outside walls", note: "Prevents condensation gradients", correctCategory: "5cm" },
+          { id: "st4", name: "Store room temperature range", note: "Controlled climate standard", correctCategory: "22-24c" }
+        ],
+        categories: [
+          { id: "25cm", label: "At least 25 cm" },
+          { id: "44cm", label: "At least 44 cm" },
+          { id: "5cm", label: "At least 5 cm" },
+          { id: "22-24c", label: "22°C to 24°C (RH 50–60%)" }
+        ],
+        explanation: "CSSD Sterile Store Standards: ≥25 cm above floor, ≥44 cm below ceiling/sprinklers, and ≥5 cm away from walls. Temperature: 22–24°C, Relative Humidity: 50–60%. FIFO (First In First Out) applies, with event-related shelf-life based on package integrity."
+      },
+      {
+        id: "q14",
+        levelId: 14,
+        title: "Emergency Decision — Immediate Use / Flash",
+        questionType: "mcq",
+        learningObjective: "Apply policy prohibiting Immediate Use Steam Sterilisation (IUSS) for implants.",
+        questionText: "An orthopedic implant screw is dropped on the floor during trauma surgery. The team asks you to run a quick 3-minute flash sterilisation without a biological indicator so they can use it immediately. What is the correct response?",
+        assetName: "Orthopedic Surgical Implant Screws",
+        imageUrl: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=800&q=80",
+        sourceReference: "HTPN IUSS Policy & Patient Safety Mandate",
+        difficulty: "Advanced",
+        points: 100,
+        active: true,
+        order: 14,
+        hint: "Implants remain in bone/tissue indefinitely; immediate-use flash sterilisation is strictly forbidden.",
+        options: [
+          { id: "a", label: "Agree and run the quick flash cycle without waiting for biological verification." },
+          { id: "b", label: "Refuse: Implants must NEVER undergo routine flash sterilisation without a monitored, validated full cycle and biological indicator release.", isCorrect: true },
+          { id: "c", label: "Rinse the screw in 70% alcohol and hand it back to the surgeon." },
+          { id: "d", label: "Wipe with bleach and place under surgical light." }
+        ],
+        explanation: "Implants must NOT undergo flash / Immediate Use Steam Sterilisation (IUSS). Because implantable devices are foreign bodies that cannot easily fight infection, sterilisation cycles must be fully monitored with Biological Indicators."
+      },
+      {
+        id: "q15",
+        levelId: 15,
+        title: "FINAL BOSS — Bronchoscope Tactical Reprocessing",
+        questionType: "final_scenario",
+        learningObjective: "Synthesize complete multi-stage end-to-end semi-critical endoscope reprocessing strictly in the reprocessing suite.",
+        questionText: "A reusable flexible bronchoscope has completed an ICU procedure. It has been transported in a closed container to the Reprocessing Area. Execute the full decontamination protocol in sequence (remembering no cleaning occurs at bedside).",
+        assetName: "Flexible Video Bronchoscope Tower",
+        imageUrl: "https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=800&q=80",
+        showSoakTimer: true,
+        sourceReference: "HTPN Flexible Endoscope Reprocessing SOP",
+        difficulty: "Advanced",
+        points: 150,
+        active: true,
+        order: 15,
+        hint: "In reprocessing area: leak test before immersion; clean & brush lumens; chemical HLD immersion; rinse, dry & store vertically.",
+        sequenceItems: [
+          { id: "b1", label: "1. Enclosed transport to Reprocessing Area & leak testing before fluid immersion", correctRank: 1 },
+          { id: "b2", label: "2. Manual cleaning, brushing all lumens & detergent flush in decontamination sink", correctRank: 2 },
+          { id: "b3", label: "3. Full immersion High-Level Disinfection (≥20 min benchmark or validated IFU)", correctRank: 3 },
+          { id: "b4", label: "4. Sterile water rinse, channel alcohol dry & vertical hanging storage", correctRank: 4 }
+        ],
+        explanation: "Boss Protocol Cleared! Flexible bronchoscopes are semi-critical devices. No cleaning is performed at bedside. Reprocessing in the designated decontamination area requires: Closed transport → Leak testing → Manual lumen brushing & cleaning in decontamination sinks → High-Level Disinfection (benchmark ≥20 mins per slide / validated IFU) → Sterile water rinse, alcohol/forced air channel drying, and vertical hanging storage in an endoscope cabinet."
+      }
+    ];
+
+    // State Variables
+    let sectorBank = [];
+    let currentSectorIdx = 0;
+    let score = 0;
+    let completedLevels = new Set();
+    let currentAttempt = 1;
+    let hintUsed = false;
+    let firstAttemptSuccesses = 0;
+    let badgeEarned = false;
+    let badgeDate = null;
+    let currentSelection = {};
+
+    // Zap Micro-Game State
+    let comboMultiplier = 1.0;
+    let zappedMicrobesCount = 0;
+    let microbeSpawnTimer = null;
+
+    // Soaking Simulation
+    let soakSeconds = 1200; // 20:00
+    let soakSpeed = 1;
+    let soakInterval = null;
+  </script>
+
+  <!-- GAMEPLAY & INTERACTION ENGINE -->
+  
+  <!-- ===== JAMBATAN PORTAL LATIHAN IPC HTPN =====
+       Dalam portal: soalan datang dari Google Sheet (Panel Koordinator → Soalan Permainan → Reprocessing Specialist),
+       satu peringkat (5 soalan) setiap kali main; keputusan dihantar balik ke portal untuk lencana. -->
+  <script>
+    const PORTAL = { embed: window.parent !== window, tersilap: {}, init: null };
+    const META_ASAL = {"R001": {"learningObjective": "Classify clinical assets into Spaulding categories to determine required reprocessing intensity.", "assetName": "Acoustic Stethoscope, Bronchoscope & Scalpel", "sourceReference": "HTPN IPC Reprocessing Guidelines - Slide 4 (Spaulding Classification)", "difficulty": "Basic", "showSoakTimer": false, "tipAsal": "classification"}, "R002": {"learningObjective": "Arrange the decontamination sequence in the dedicated reprocessing area in chronological order.", "assetName": "CSSD Multi-Bay Decontamination Wash Sinks", "sourceReference": "HTPN Decontamination Protocol - Slide 8", "difficulty": "Basic", "showSoakTimer": true, "tipAsal": "sequence"}, "R003": {"learningObjective": "Match disinfectants to validated clinical applications per HTPN policy.", "assetName": "Disinfectant Chemical Vials & Bottles", "sourceReference": "HTPN Disinfection Guidelines - Table 3", "difficulty": "Intermediate", "showSoakTimer": false, "tipAsal": "matching"}, "R004": {"learningObjective": "Select validated sterilisation methods based on device thermal tolerance.", "assetName": "Hospital Steam Sterilizer Chamber", "sourceReference": "HTPN Sterilisation Standard - Slide 12", "difficulty": "Basic", "showSoakTimer": false, "tipAsal": "mcq"}, "R005": {"learningObjective": "Recall the benchmark HLD contact time from the training slides while noting IFU variance.", "assetName": "Endoscope Chemical Immersion Bath", "sourceReference": "HTPN HLD Policy - Slide 15", "difficulty": "Intermediate", "showSoakTimer": true, "tipAsal": "mcq"}, "R006": {"learningObjective": "Distinguish microbiological kill capabilities between disinfection and sterilisation.", "assetName": "Bacterial Endospore Micrograph View", "sourceReference": "Microbiology in IPC - HTPN Module 1", "difficulty": "Intermediate", "showSoakTimer": false, "tipAsal": "mcq"}, "R007": {"learningObjective": "Identify unsafe decontamination and soaking practices in the CSSD.", "assetName": "CSSD Wash Sinks & Instrument Inspection", "sourceReference": "HTPN CSSD Errors & Safety Guidelines", "difficulty": "Intermediate", "showSoakTimer": false, "tipAsal": "spot_error"}, "R008": {"learningObjective": "Select appropriate PPE for manual decontamination rooms per risk assessment.", "assetName": "Full Personal Protective Equipment Ensemble", "sourceReference": "HTPN PPE Standard Operating Procedure - Decontamination", "difficulty": "Basic", "showSoakTimer": false, "tipAsal": "ppe_selection"}, "R009": {"learningObjective": "Recognize vascular instrumentation as critical requiring absolute sterilisation.", "assetName": "Surgical Catheter & Reprocessing Setup", "sourceReference": "HTPN Spaulding Risk Decision Tree", "difficulty": "Basic", "showSoakTimer": false, "tipAsal": "mcq"}, "R010": {"learningObjective": "Reinforce the sequential steps within the reprocessing facility from intake to storage.", "assetName": "CSSD Decontamination & Packing Workflow", "sourceReference": "HTPN Reprocessing Flowchart - Slide 20", "difficulty": "Intermediate", "showSoakTimer": false, "tipAsal": "sequence"}, "R011": {"learningObjective": "Distinguish physical, chemical, and biological sterilisation monitoring.", "assetName": "Biological Spore Test Ampoules & Chemical Strips", "sourceReference": "HTPN Steriliser QA & Verification Standard", "difficulty": "Advanced", "showSoakTimer": false, "tipAsal": "matching"}, "R012": {"learningObjective": "Select low-temperature sterilisation for heat-sensitive equipment.", "assetName": "Laparoscopic Surgical Optics & Camera", "sourceReference": "HTPN Equipment Compatibility Matrix - Section 4", "difficulty": "Intermediate", "showSoakTimer": false, "tipAsal": "mcq"}, "R013": {"learningObjective": "Identify exact physical clearance distances for sterile storage areas.", "assetName": "Hospital Sterile Stock Cleanroom Shelving", "sourceReference": "HTPN Sterile Store Room Guidelines - Slide 28", "difficulty": "Advanced", "showSoakTimer": false, "tipAsal": "classification"}, "R014": {"learningObjective": "Apply policy prohibiting Immediate Use Steam Sterilisation (IUSS) for implants.", "assetName": "Orthopedic Surgical Implant Screws", "sourceReference": "HTPN IUSS Policy & Patient Safety Mandate", "difficulty": "Advanced", "showSoakTimer": false, "tipAsal": "mcq"}, "R015": {"learningObjective": "Synthesize complete multi-stage end-to-end semi-critical endoscope reprocessing strictly in the reprocessing suite.", "assetName": "Flexible Video Bronchoscope Tower", "sourceReference": "HTPN Flexible Endoscope Reprocessing SOP", "difficulty": "Advanced", "showSoakTimer": true, "tipAsal": "final_scenario"}};
+    const GAMBAR_LALAI = { mcq: 'https://images.unsplash.com/photo-1583912267550-d974311a9a6e?auto=format&fit=crop&w=800&q=80', sequence: 'https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=800&q=80', classification: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80' };
+    function kembaliPortal(e){ if (e) e.preventDefault(); if (PORTAL.embed) window.parent.postMessage({ type: 'ipcgo-close' }, '*'); else history.back(); }
+    function keSektor(q, i, peringkat){
+      const m = META_ASAL[q.id] || {}, susah = ['Basic', 'Intermediate', 'Advanced'][Math.min(2, Math.max(0, (peringkat || 1) - 1))];
+      const s = { id: q.id, levelId: i + 1, title: q.senario || ('Sector ' + (i + 1)), learningObjective: m.learningObjective || (q.senario || 'Apply HTPN reprocessing standards.'),
+        questionText: q.soalan, assetName: m.assetName || q.senario || 'CLINICAL SPECIMEN', sourceReference: m.sourceReference || 'HTPN IPC Reprocessing Guidelines',
+        difficulty: m.difficulty || susah, points: 100, active: true, order: i + 1, hint: q.petunjuk || 'Review the HTPN reprocessing guideline for this step.',
+        explanation: q.penerangan || '', showSoakTimer: !!m.showSoakTimer };
+      if (q.jenis === 'Susun') { s.questionType = 'sequence'; s.sequenceItems = q.pilihan.map((t, k) => ({ id: 's' + (k + 1), label: t, correctRank: k + 1 })); }
+      else if (q.jenis === 'Padanan') {
+        const cats = []; q.pasangan.forEach(p => { if (!cats.includes(p[1])) cats.push(p[1]); });
+        s.questionType = 'classification';
+        s.categories = cats.map((c, k) => ({ id: 'c' + k, label: c }));
+        s.activityItems = q.pasangan.map((p, k) => ({ id: 'i' + (k + 1), name: p[0], note: '', correctCategory: 'c' + cats.indexOf(p[1]) }));
+      } else {
+        const betul = String(q.jawapan || '').split(',').map(Number);
+        const ord = q.pilihan.map((t, k) => ({ t, ok: betul.includes(k + 1) })).sort(() => Math.random() - 0.5);
+        s.questionType = 'mcq'; s.options = ord.map((o, k) => ({ id: 'abcdef'[k], label: o.t, isCorrect: o.ok }));
+      }
+      s.imageUrl = (q.mediaJenis === 'Gambar' && /^https?:\/\//.test(q.mediaPautan || '')) ? q.mediaPautan : GAMBAR_LALAI[s.questionType] || GAMBAR_LALAI.mcq;
+      return s;
+    }
+    function resetLarian(){
+      score = 0; completedLevels = new Set(); firstAttemptSuccesses = 0; badgeEarned = false; badgeDate = null; zappedMicrobesCount = 0; comboMultiplier = 1.0; PORTAL.tersilap = {};
+      document.getElementById('portal-actions').classList.add('hidden'); document.getElementById('portal-actions').classList.remove('flex');
+      updateHUD(); renderLevelDots();
+    }
+    function hantarKeputusan(){
+      const n = sectorBank.length, mx = PORTAL.init ? PORTAL.init.lulusMin : Math.ceil(n * 0.8);
+      document.getElementById('sum-kicker').innerText = `PERINGKAT ${PORTAL.init ? PORTAL.init.peringkat : 1} · ${n} SECTORS CLEARED`;
+      document.getElementById('sum-title').innerText = 'MENGHANTAR KEPUTUSAN…';
+      document.getElementById('sum-text').innerText = `Betul pada cubaan pertama: ${firstAttemptSuccesses} / ${n} (perlu ${mx} untuk lulus peringkat ini).`;
+      document.getElementById('sum-badge').style.display = 'none';
+      document.getElementById('final-first-attempts').innerText = `${firstAttemptSuccesses} / ${n}`;
+      window.parent.postMessage({ type: 'ipcgo-result', betulPertama: firstAttemptSuccesses, jumlah: n, skor: score }, '*');
+    }
+    function butangPortal(label, kelas, fn){ const b = document.createElement('button'); b.className = kelas + ' px-6 py-3 rounded-xl font-arcade text-xs font-black transition active:scale-95 cursor-pointer'; b.innerHTML = label; b.onclick = fn; return b; }
+    window.addEventListener('message', e => {
+      const m = e.data || {};
+      if (m.type === 'ipcgo-init') {
+        PORTAL.init = m;
+        sectorBank = (m.soalan || []).map((q, i) => keSektor(q, i, m.peringkat));
+        resetLarian();
+        const t = document.querySelector('#screen-launchpad h1, #screen-launchpad h2');
+        document.getElementById('screen-launchpad').querySelectorAll('button[onclick="startGame()"]').forEach(b => { b.disabled = false; const s = b.querySelector('span'); if (s) s.innerText = `MULA PERINGKAT ${m.peringkat} / ${m.jumlahPeringkat}`; });
+        startMicrobeSpawner();
+      }
+      if (m.type === 'ipcgo-ack') {
+        const box = document.getElementById('portal-actions'); box.innerHTML = '';
+        document.getElementById('sum-title').innerText = m.lencana ? 'LENCANA REPROCESSING SPECIALIST DIPEROLEH!' : m.lulus ? `PERINGKAT ${PORTAL.init.peringkat} LULUS!` : 'HAMPIR BERJAYA — CUBA LAGI';
+        if (m.lencana) document.getElementById('sum-badge').style.display = '';
+        if (m.lulus && m.seterus) box.appendChild(butangPortal(`<i class="fa-solid fa-forward mr-1.5"></i> Peringkat ${m.seterus}`, 'bg-gradient-to-r from-htpn-teal to-htpn-cyan text-slate-950', () => window.parent.postMessage({ type: 'ipcgo-next', peringkat: m.seterus }, '*')));
+        if (!m.lulus) box.appendChild(butangPortal('<i class="fa-solid fa-rotate-left mr-1.5"></i> Cuba peringkat ini semula', 'bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950', () => window.parent.postMessage({ type: 'ipcgo-next', peringkat: PORTAL.init.peringkat }, '*')));
+        box.appendChild(butangPortal('<i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke IPC GO!', 'bg-htpn-card text-slate-200 border border-htpn-border', () => kembaliPortal()));
+        box.classList.remove('hidden'); box.classList.add('flex');
+        document.getElementById('sum-actions').style.display = 'none';
+      }
+    });
+  </script>
+<script>
+    function initGameData() {
+      const saved = null; // soalan diurus dalam Panel Koordinator portal
+      if (saved) {
+        try {
+          sectorBank = JSON.parse(saved);
+        } catch (e) {
+          sectorBank = JSON.parse(JSON.stringify(INITIAL_SECTORS));
+        }
+      } else {
+        sectorBank = JSON.parse(JSON.stringify(INITIAL_SECTORS));
+      }
+
+      const prog = localStorage.getItem('htpn_sterizap_progress_v5');
+      if (prog) {
+        try {
+          const p = JSON.parse(prog);
+          score = p.score || 0;
+          completedLevels = new Set(p.completedLevels || []);
+          firstAttemptSuccesses = p.firstAttemptSuccesses || 0;
+          badgeEarned = p.badgeEarned || false;
+          badgeDate = p.badgeDate || null;
+          zappedMicrobesCount = p.zappedMicrobesCount || 0;
+        } catch(e) {}
+      }
+
+      updateHUD();
+      renderLevelDots();
+      startMicrobeSpawner();
+    }
+
+    function saveProgress() {
+      if (PORTAL.embed) return;   // dalam portal: kemajuan direkod oleh portal (Google Sheet)
+      const data = {
+        score,
+        completedLevels: Array.from(completedLevels),
+        firstAttemptSuccesses,
+        badgeEarned,
+        badgeDate,
+        zappedMicrobesCount
+      };
+      localStorage.setItem('htpn_sterizap_progress_v5', JSON.stringify(data));
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-score').innerText = score;
+      document.getElementById('hud-level').innerText = `${currentSectorIdx + 1} / ${sectorBank.length}`;
+      document.getElementById('hud-combo').innerText = `x${comboMultiplier.toFixed(1)}`;
+      document.getElementById('radar-zapped-count').innerText = zappedMicrobesCount;
+      
+      const lCleared = document.getElementById('launchpad-cleared');
+      if (lCleared) lCleared.innerText = `${completedLevels.size} / ${sectorBank.length} Cleared`;
+
+      const lBadge = document.getElementById('launchpad-badge');
+      if (lBadge) {
+        if (badgeEarned) {
+          lBadge.className = 'text-xs font-bold text-amber-400 block pt-1 animate-pulse';
+          lBadge.innerHTML = '🏅 ACCREDITED';
+        } else {
+          lBadge.className = 'text-xs font-bold text-slate-400 block pt-1';
+          lBadge.innerText = 'LOCKED';
+        }
+      }
+    }
+
+    function renderLevelDots() {
+      const track = document.getElementById('level-dots-track');
+      track.innerHTML = '';
+
+      sectorBank.forEach((q, idx) => {
+        const isCurrent = idx === currentSectorIdx;
+        const isDone = completedLevels.has(q.levelId);
+        const isUnlocked = idx === 0 || completedLevels.has(sectorBank[idx - 1]?.levelId) || isDone;
+
+        const btn = document.createElement('button');
+        btn.disabled = !isUnlocked;
+        btn.onclick = () => selectSector(idx);
+        btn.className = `w-7 h-7 rounded-lg flex items-center justify-center font-arcade text-[10px] font-bold transition relative cursor-pointer ${
+          isCurrent 
+            ? 'bg-htpn-teal text-slate-950 ring-2 ring-cyan-300 shadow-md shadow-htpn-teal/50 scale-110' 
+            : isDone 
+            ? 'bg-emerald-950 text-emerald-300 border border-emerald-600 hover:bg-emerald-900' 
+            : isUnlocked 
+            ? 'bg-htpn-card text-slate-300 border border-htpn-border hover:border-htpn-teal' 
+            : 'bg-slate-900 text-slate-600 border border-slate-800 opacity-40 cursor-not-allowed'
+        }`;
+        btn.innerHTML = q.levelId;
+        btn.title = `Sector ${q.levelId}: ${q.title}`;
+        track.appendChild(btn);
+      });
+    }
+
+    function returnToLaunchpad() {
+      sfx.playBlip(500);
+      document.getElementById('screen-gameplay').classList.add('hidden');
+      document.getElementById('screen-summary').classList.add('hidden');
+      document.getElementById('screen-launchpad').classList.remove('hidden');
+    }
+
+    function startGame() {
+      sfx.playBlip(750, 0.12);
+      sfx.startBGM(); // Start suspense BGM with ascending tempo/pitch
+      document.getElementById('screen-launchpad').classList.add('hidden');
+      document.getElementById('screen-summary').classList.add('hidden');
+      document.getElementById('screen-gameplay').classList.remove('hidden');
+      loadSector(0);
+    }
+
+    function selectSector(idx) {
+      if (idx >= 0 && idx < sectorBank.length) {
+        sfx.playBlip(620, 0.08);
+        sfx.startBGM();
+        document.getElementById('screen-launchpad').classList.add('hidden');
+        document.getElementById('screen-summary').classList.add('hidden');
+        document.getElementById('screen-gameplay').classList.remove('hidden');
+        loadSector(idx);
+      }
+    }
+
+    function loadSector(idx) {
+      currentSectorIdx = idx;
+      currentAttempt = 1;
+      hintUsed = false;
+      currentSelection = {};
+
+      const q = sectorBank[currentSectorIdx];
+
+      // Update sound engine tension: ascending pitch & tempo as level index increases
+      sfx.setSector(idx + 1);
+
+      document.getElementById('level-badge').innerText = `SECTOR ${String(q.levelId).padStart(2, '0')}`;
+      document.getElementById('difficulty-badge').innerText = q.difficulty.toUpperCase();
+      document.getElementById('level-points').innerText = q.points;
+      document.getElementById('level-attempt').innerText = currentAttempt;
+      document.getElementById('stage-title').innerText = q.title;
+      document.getElementById('stage-objective').innerHTML = `<i class="fa-solid fa-bullseye text-htpn-teal mr-1"></i> ${q.learningObjective}`;
+      document.getElementById('stage-instruction').innerText = q.questionText;
+
+      // Real Clinical Photo Bind
+      const stageImg = document.getElementById('stage-real-image');
+      stageImg.src = q.imageUrl;
+      document.getElementById('stage-asset-name').innerText = q.assetName || "CLINICAL SPECIMEN";
+
+      // Soaking Sim Tray
+      const tankTray = document.getElementById('soaking-tank-sim');
+      if (q.showSoakTimer) {
+        tankTray.classList.remove('hidden');
+        startSoakingTimer();
+      } else {
+        tankTray.classList.add('hidden');
+        stopSoakingTimer();
+      }
+
+      // Reset Hint Section
+      document.getElementById('hint-box').classList.add('hidden');
+      document.getElementById('hint-box').innerText = '';
+      document.getElementById('btn-hint').classList.remove('hidden');
+
+      // Reset Feedback
+      document.getElementById('feedback-tray').className = 'hidden my-4 p-4 rounded-2xl border';
+
+      // Reset Action Buttons
+      document.getElementById('btn-submit').classList.remove('hidden');
+      document.getElementById('btn-next').classList.add('hidden');
+
+      renderArena(q);
+      updateHUD();
+      renderLevelDots();
+    }
+
+    // REAL SOAKING BATH SIMULATION WITH COUNTDOWN
+    function startSoakingTimer() {
+      clearInterval(soakInterval);
+      soakSeconds = 1200; // 20:00 benchmark
+      soakSpeed = 1;
+      updateSoakUI();
+      soakInterval = setInterval(() => {
+        if (soakSeconds > 0) {
+          soakSeconds -= (1 * soakSpeed);
+          if (soakSeconds < 0) soakSeconds = 0;
+          updateSoakUI();
+          if (Math.random() < 0.15) sfx.playSplash();
+        }
+      }, 1000);
+    }
+
+    function stopSoakingTimer() {
+      clearInterval(soakInterval);
+    }
+
+    function accelerateSoakTimer() {
+      soakSpeed = soakSpeed === 1 ? 15 : 1;
+      sfx.playZap();
+      updateSoakUI();
+    }
+
+    function updateSoakUI() {
+      const mins = Math.floor(soakSeconds / 60);
+      const secs = Math.floor(soakSeconds % 60);
+      const str = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} MIN`;
+      const disp = document.getElementById('tank-timer-val');
+      if (disp) disp.innerText = str;
+
+      const progress = ((1200 - soakSeconds) / 1200) * 100;
+      const bar = document.getElementById('tank-fluid-level');
+      if (bar) bar.style.width = `${progress}%`;
+    }
+
+    function revealHint() {
+      if (hintUsed) return;
+      sfx.playBlip(900, 0.15);
+      hintUsed = true;
+      const q = sectorBank[currentSectorIdx];
+      const hBox = document.getElementById('hint-box');
+      hBox.innerHTML = `<i class="fa-solid fa-lightbulb text-amber-400 mr-1.5"></i> <strong>CLINICAL INTEL:</strong> ${q.hint}`;
+      hBox.classList.remove('hidden');
+      document.getElementById('btn-hint').classList.add('hidden');
+    }
+
+    function retryCurrentLevel() {
+      sfx.playBlip(400);
+      loadSector(currentSectorIdx);
+    }
+
+    // ARENA DISPATCHER
+    function renderArena(q) {
+      const arena = document.getElementById('interactive-arena');
+      arena.innerHTML = '';
+
+      switch (q.questionType) {
+        case 'classification':
+          renderClassification(q, arena);
+          break;
+        case 'sequence':
+        case 'final_scenario':
+          renderSequence(q, arena);
+          break;
+        case 'matching':
+          renderMatching(q, arena);
+          break;
+        case 'mcq':
+        case 'spot_error':
+        case 'ppe_selection':
+        default:
+          renderMCQ(q, arena);
+          break;
+      }
+    }
+
+    // 1. Multiple Choice Arena
+    function renderMCQ(q, arena) {
+      const container = document.createElement('div');
+      container.className = 'grid grid-cols-1 gap-3';
+
+      q.options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left p-4 rounded-2xl border-2 border-htpn-border bg-htpn-card/80 hover:bg-htpn-border hover:border-htpn-teal/60 text-slate-200 text-xs md:text-sm font-medium transition flex items-center justify-between group active:scale-98 shadow-sm cursor-pointer';
+        btn.id = `mcq-${opt.id}`;
+        
+        btn.onclick = () => {
+          sfx.playBlip(680);
+          currentSelection = opt.id;
+          q.options.forEach(o => {
+            const el = document.getElementById(`mcq-${o.id}`);
+            el.className = 'w-full text-left p-4 rounded-2xl border-2 border-htpn-border bg-htpn-card/80 text-slate-200 text-xs md:text-sm font-medium transition flex items-center justify-between group cursor-pointer';
+          });
+          btn.className = 'w-full text-left p-4 rounded-2xl border-2 border-htpn-teal bg-cyan-950/80 text-htpn-teal ring-2 ring-htpn-teal/50 text-xs md:text-sm font-bold transition flex items-center justify-between shadow-lg shadow-htpn-teal/20 cursor-pointer';
+        };
+
+        btn.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="w-7 h-7 rounded-xl bg-htpn-surface border border-htpn-border flex items-center justify-center font-arcade text-xs uppercase group-hover:text-htpn-teal text-slate-400">
+              ${opt.id}
+            </span>
+            <span class="font-sans">${opt.label}</span>
+          </div>
+          <i class="fa-solid fa-crosshairs text-slate-600 group-hover:text-htpn-teal transition"></i>
+        `;
+        container.appendChild(btn);
+      });
+      arena.appendChild(container);
+    }
+
+    // 2. Classification Arena
+    function renderClassification(q, arena) {
+      currentSelection = {};
+      const wrap = document.createElement('div');
+      wrap.className = 'space-y-3';
+
+      q.activityItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'p-4 bg-htpn-card/90 border border-htpn-border rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md';
+
+        card.innerHTML = `
+          <div>
+            <h5 class="font-black font-arcade text-white text-sm flex items-center gap-2">
+              <i class="fa-solid fa-cube text-htpn-teal text-xs"></i> ${item.name}
+            </h5>
+            <p class="text-xs text-slate-400 font-tech">${item.note}</p>
+          </div>
+          <div class="flex flex-wrap gap-2" id="grp-${item.id}">
+          </div>
+        `;
+
+        const btnGrp = card.querySelector(`#grp-${item.id}`);
+        q.categories.forEach(cat => {
+          const pill = document.createElement('button');
+          pill.className = 'px-3 py-1.5 rounded-xl border border-htpn-border bg-htpn-surface text-[11px] font-tech text-slate-300 hover:border-htpn-teal/50 transition cursor-pointer';
+          pill.id = `cat-${item.id}-${cat.id}`;
+          pill.innerText = cat.label;
+          
+          pill.onclick = () => {
+            sfx.playBlip(560);
+            currentSelection[item.id] = cat.id;
+            q.categories.forEach(c => {
+              const el = document.getElementById(`cat-${item.id}-${c.id}`);
+              el.className = 'px-3 py-1.5 rounded-xl border border-htpn-border bg-htpn-surface text-[11px] font-tech text-slate-300 hover:border-htpn-teal/50 transition cursor-pointer';
+            });
+            pill.className = 'px-3 py-1.5 rounded-xl border-2 border-htpn-teal bg-htpn-teal/20 text-htpn-teal font-black text-[11px] font-tech ring-1 ring-htpn-teal transition shadow-sm cursor-pointer';
+          };
+          btnGrp.appendChild(pill);
+        });
+
+        wrap.appendChild(card);
+      });
+
+      arena.appendChild(wrap);
+    }
+
+    // 3. Sequence Ordering Arena
+    function renderSequence(q, arena) {
+      let items = [...q.sequenceItems];
+      if (!currentSelection.order) {
+        items.sort(() => Math.random() - 0.5);
+        currentSelection.order = items.map(i => i.id);
+      } else {
+        items = currentSelection.order.map(id => q.sequenceItems.find(i => i.id === id));
+      }
+
+      const box = document.createElement('div');
+      box.id = 'seq-container';
+      box.className = 'space-y-2.5';
+      renderSeqDOM(items, q, box);
+      arena.appendChild(box);
+    }
+
+    function renderSeqDOM(items, q, container) {
+      container.innerHTML = '';
+      items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'p-3.5 bg-htpn-card/90 border border-htpn-border rounded-2xl flex items-center justify-between gap-3 text-xs md:text-sm font-medium shadow-md';
+
+        row.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="w-7 h-7 rounded-xl bg-gradient-to-br from-htpn-teal to-cyan-400 text-slate-950 font-black font-arcade text-xs flex items-center justify-center shadow-md">
+              ${idx + 1}
+            </span>
+            <span class="text-slate-100 font-sans">${item.label}</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button onclick="shiftSequence(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="w-8 h-8 rounded-lg bg-htpn-surface border border-htpn-border flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-25 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-chevron-up text-xs"></i>
+            </button>
+            <button onclick="shiftSequence(${idx}, 1)" ${idx === items.length - 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg bg-htpn-surface border border-htpn-border flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-25 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function shiftSequence(idx, dir) {
+      sfx.playBlip(600);
+      const q = sectorBank[currentSectorIdx];
+      const ord = [...currentSelection.order];
+      const target = idx + dir;
+
+      const tmp = ord[idx];
+      ord[idx] = ord[target];
+      ord[target] = tmp;
+
+      currentSelection.order = ord;
+      const items = ord.map(id => q.sequenceItems.find(i => i.id === id));
+      const box = document.getElementById('seq-container');
+      renderSeqDOM(items, q, box);
+    }
+
+    // 4. Chemical Reagent Matching Arena
+    function renderMatching(q, arena) {
+      currentSelection = {};
+      const wrap = document.createElement('div');
+      wrap.className = 'grid grid-cols-1 gap-3';
+
+      const apps = q.matchPairs.map(p => p.application);
+
+      q.matchPairs.forEach(pair => {
+        const c = document.createElement('div');
+        c.className = 'p-4 bg-htpn-card/90 border border-htpn-border rounded-2xl space-y-2.5 shadow-md';
+
+        c.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-black font-arcade text-htpn-teal text-xs flex items-center gap-2">
+              <i class="fa-solid fa-flask-vial text-cyan-400"></i> ${pair.chemical}
+            </span>
+          </div>
+        `;
+
+        const sel = document.createElement('select');
+        sel.className = 'w-full p-3 rounded-xl bg-htpn-surface border border-htpn-border text-slate-200 text-xs font-tech focus:border-htpn-teal focus:outline-none';
+        sel.innerHTML = `<option value="">-- Assign Validated Application --</option>`;
+
+        apps.forEach(a => {
+          sel.innerHTML += `<option value="${a}">${a}</option>`;
+        });
+
+        sel.onchange = (e) => {
+          sfx.playBlip(520);
+          currentSelection[pair.chemical] = e.target.value;
+        };
+
+        c.appendChild(sel);
+        wrap.appendChild(c);
+      });
+
+      arena.appendChild(wrap);
+    }
+
+    // EVALUATION ENGINE
+    function submitCurrentAnswer() {
+      const q = sectorBank[currentSectorIdx];
+      let correct = false;
+
+      switch (q.questionType) {
+        case 'mcq':
+        case 'spot_error':
+        case 'ppe_selection': {
+          const sel = currentSelection;
+          if (!sel || typeof sel !== 'string') {
+            triggerNotice('Please select an option before verification.');
+            return;
+          }
+          const cOpt = q.options.find(o => o.isCorrect);
+          correct = sel === cOpt.id;
+          break;
+        }
+
+        case 'classification': {
+          const sels = currentSelection || {};
+          const allSet = q.activityItems.every(i => sels[i.id]);
+          if (!allSet) {
+            triggerNotice('Please assign categories to all medical items.');
+            return;
+          }
+          correct = q.activityItems.every(i => sels[i.id] === i.correctCategory);
+          break;
+        }
+
+        case 'sequence':
+        case 'final_scenario': {
+          const ord = currentSelection.order;
+          if (!ord || ord.length !== q.sequenceItems.length) {
+            triggerNotice('Please arrange all sequence stages.');
+            return;
+          }
+          correct = ord.every((id, idx) => {
+            const item = q.sequenceItems.find(i => i.id === id);
+            return item.correctRank === (idx + 1);
+          });
+          break;
+        }
+
+        case 'matching': {
+          const pairs = currentSelection || {};
+          const allM = q.matchPairs.every(p => pairs[p.chemical]);
+          if (!allM) {
+            triggerNotice('Please assign validated applications to all chemical bottles.');
+            return;
+          }
+          correct = q.matchPairs.every(p => pairs[p.chemical] === p.application);
+          break;
+        }
+      }
+
+      showFeedback(correct, q);
+    }
+
+    function showFeedback(correct, q) {
+      const tray = document.getElementById('feedback-tray');
+      const icon = document.getElementById('feedback-icon');
+      const title = document.getElementById('feedback-title');
+      const text = document.getElementById('feedback-text');
+      const src = document.getElementById('feedback-source');
+      const card = document.getElementById('game-card-container');
+
+      tray.classList.remove('hidden');
+
+      if (correct) {
+        sfx.playCorrect();
+        comboMultiplier = Math.min(3.0, comboMultiplier + 0.2);
+        tray.className = 'my-4 p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-950/80 text-emerald-200 shadow-xl';
+        icon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400 text-3xl"></i>';
+        title.innerText = 'PROTOCOL VERIFIED — ACCREDITED';
+        text.innerText = q.explanation;
+        src.innerText = `OFFICIAL REFERENCE: ${q.sourceReference}`;
+
+        // Scoring rules: 1st pass = 100, retry = 50, hint = -5, combo bonus
+        let earned = currentAttempt === 1 ? q.points : Math.floor(q.points / 2);
+        if (hintUsed) earned = Math.max(0, earned - 5);
+        earned = Math.round(earned * comboMultiplier);
+
+        if (!completedLevels.has(q.levelId)) {
+          score += earned;
+          completedLevels.add(q.levelId);
+          if (currentAttempt === 1 && !PORTAL.tersilap[q.levelId]) firstAttemptSuccesses++;
+          saveProgress();
+          updateHUD();
+        }
+
+        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('btn-next').classList.remove('hidden');
+
+        // Check overall completion
+        if (completedLevels.size >= sectorBank.length && !badgeEarned) {
+          badgeEarned = true;
+          badgeDate = new Date().toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' });
+          saveProgress();
+        }
+
+      } else {
+        sfx.playFail();
+        PORTAL.tersilap[q.levelId] = true;
+        comboMultiplier = 1.0;
+        currentAttempt++;
+        document.getElementById('level-attempt').innerText = currentAttempt;
+
+        // Screen Shake
+        card.classList.add('shake-hazard');
+        setTimeout(() => card.classList.remove('shake-hazard'), 400);
+
+        tray.className = 'my-4 p-4 rounded-2xl border-2 border-rose-500 bg-rose-950/80 text-rose-200 shadow-xl';
+        icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-400 text-3xl"></i>';
+        title.innerText = 'PROTOCOL DEVIATION OBSERVED';
+        text.innerText = `Hazard detected in decontamination order or chemical contact parameters. Please re-evaluate IPC guidelines and retry.`;
+        src.innerText = `CLINICAL HINT: Check ${q.sourceReference}`;
+      }
+    }
+
+    function goToNextLevel() {
+      sfx.playBlip(700);
+      if (currentSectorIdx + 1 < sectorBank.length) {
+        loadSector(currentSectorIdx + 1);
+      } else {
+        showMissionSummary();
+      }
+    }
+
+    function showMissionSummary() {
+      sfx.playCorrect();
+      document.getElementById('screen-gameplay').classList.add('hidden');
+      document.getElementById('screen-summary').classList.remove('hidden');
+
+      document.getElementById('final-score').innerText = score;
+      document.getElementById('final-first-attempts').innerText = `${firstAttemptSuccesses} / ${sectorBank.length}`;
+      document.getElementById('final-zaps').innerText = zappedMicrobesCount;
+      document.getElementById('badge-date').innerText = badgeDate || new Date().toLocaleString();
+      updateHUD();
+      if (PORTAL.embed) hantarKeputusan();
+    }
+
+    function replayGame() {
+      if (PORTAL.embed) { resetLarian(); }
+      sfx.playBlip(500);
+      document.getElementById('screen-summary').classList.add('hidden');
+      document.getElementById('screen-gameplay').classList.remove('hidden');
+      loadSector(0);
+    }
+
+    // FLOATING MICRO-ZAP ARCADE MECHANIC
+    function startMicrobeSpawner() {
+      const container = document.getElementById('floating-microbe-container');
+      if (!container) return;
+
+      const microbeTypes = [
+        { name: "Pseudomonas", icon: "fa-bacteria", color: "#ff0055" },
+        { name: "M. tuberculosis", icon: "fa-virus", color: "#00d4ff" },
+        { name: "G. stearothermophilus", icon: "fa-biohazard", color: "#0df2c9" },
+        { name: "Biofilm Matrix", icon: "fa-microbe", color: "#ffb703" }
+      ];
+
+      setInterval(() => {
+        if (container.childElementCount > 6) return;
+
+        const microbe = microbeTypes[Math.floor(Math.random() * microbeTypes.length)];
+        const el = document.createElement('div');
+        el.className = 'absolute cursor-pointer flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-arcade font-bold border shadow-lg transition active:scale-75 animate-bounce';
+        el.style.backgroundColor = 'rgba(7, 22, 44, 0.85)';
+        el.style.borderColor = microbe.color;
+        el.style.color = microbe.color;
+        el.style.left = `${Math.random() * 80 + 5}%`;
+        el.style.top = `${Math.random() * 50 + 10}%`;
+
+        el.innerHTML = `<i class="fa-solid ${microbe.icon}"></i> <span>${microbe.name}</span>`;
+
+        el.onclick = (e) => {
+          e.stopPropagation();
+          sfx.playZap();
+          zappedMicrobesCount++;
+          score += 10;
+          updateHUD();
+          saveProgress();
+
+          // Particle burst
+          el.innerHTML = '<i class="fa-solid fa-burst text-amber-300 text-lg"></i>';
+          setTimeout(() => el.remove(), 250);
+        };
+
+        container.appendChild(el);
+
+        // Auto remove after 6 seconds
+        setTimeout(() => { if (el.parentElement) el.remove(); }, 6000);
+      }, 2500);
+    }
+
+    function toggleAudio() {
+      sfx.muted = !sfx.muted;
+      const btn = document.getElementById('btn-audio');
+      if (!sfx.muted) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i><span class="text-[10px] font-arcade font-bold hidden sm:inline">BGM</span>';
+        btn.className = 'h-9 px-2.5 rounded-xl bg-htpn-card border border-htpn-border flex items-center space-x-1.5 text-htpn-teal hover:border-htpn-teal transition active:scale-95 cursor-pointer';
+        sfx.startBGM();
+        sfx.playBlip(600);
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i><span class="text-[10px] font-arcade font-bold hidden sm:inline">MUTED</span>';
+        btn.className = 'h-9 px-2.5 rounded-xl bg-htpn-card border border-htpn-border flex items-center space-x-1.5 text-slate-500 hover:text-slate-400 transition cursor-pointer';
+        sfx.stopBGM();
+      }
+    }
+
+    function triggerNotice(msg) {
+      sfx.playFail();
+      const card = document.getElementById('game-card-container');
+      card.classList.add('shake-hazard');
+      setTimeout(() => card.classList.remove('shake-hazard'), 400);
+
+      const fTray = document.getElementById('feedback-tray');
+      fTray.className = 'my-4 p-4 rounded-2xl border-2 border-amber-500 bg-amber-950/80 text-amber-200';
+      document.getElementById('feedback-icon').innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-400 text-2xl"></i>';
+      document.getElementById('feedback-title').innerText = 'ACTION REQUIRED';
+      document.getElementById('feedback-text').innerText = msg;
+      document.getElementById('feedback-source').innerText = '';
+      fTray.classList.remove('hidden');
+    }
+  </script>
+
+  <!-- ADMIN QUESTION BANK SCRIPT -->
+  <script>
+    function toggleAdminModal(show) {
+      const modal = document.getElementById('modal-admin');
+      if (show) {
+        sfx.playBlip(600);
+        modal.classList.remove('hidden');
+        renderAdminList();
+      } else {
+        sfx.playBlip(400);
+        modal.classList.add('hidden');
+      }
+    }
+
+    function renderAdminList() {
+      const list = document.getElementById('admin-questions-list');
+      list.innerHTML = '';
+      document.getElementById('admin-count').innerText = sectorBank.length;
+
+      sectorBank.forEach((q, idx) => {
+        const item = document.createElement('div');
+        item.className = 'p-3.5 bg-htpn-card/80 border border-htpn-border rounded-2xl space-y-2';
+
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded font-arcade font-bold text-htpn-teal bg-htpn-surface border border-htpn-teal/40">
+                S${q.levelId}
+              </span>
+              <span class="font-bold text-white">${q.title}</span>
+              <span class="text-slate-400 font-tech text-[10px]">(${q.questionType})</span>
+            </div>
+            <button onclick="toggleSectorActive(${idx})" class="px-2.5 py-1 rounded-lg text-[10px] font-arcade font-bold cursor-pointer ${q.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-500 border border-slate-700'}">
+              ${q.active ? 'ACTIVE' : 'INACTIVE'}
+            </button>
+          </div>
+          <p class="text-slate-300 text-xs">${q.questionText}</p>
+          <div class="text-[10px] font-mono text-slate-400 flex items-center justify-between">
+            <span>Points: ${q.points} | Diff: ${q.difficulty}</span>
+            <span>Asset: ${q.assetName}</span>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function toggleSectorActive(idx) {
+      sfx.playBlip(550);
+      sectorBank[idx].active = !sectorBank[idx].active;
+      localStorage.setItem('htpn_sterizap_questions_v5', JSON.stringify(sectorBank));
+      renderAdminList();
+    }
+
+    function exportJSON() {
+      sfx.playBlip(700);
+      const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sectorBank, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", str);
+      a.setAttribute("download", `HTPN_SteriZap_QuestionBank_${Date.now()}.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            sectorBank = parsed;
+            localStorage.setItem('htpn_sterizap_questions_v5', JSON.stringify(sectorBank));
+            renderAdminList();
+            renderLevelDots();
+            loadSector(0);
+            sfx.playCorrect();
+            triggerNotice(`Successfully imported ${parsed.length} sectors from JSON!`);
+          } else {
+            triggerNotice('Invalid JSON format: Array expected.');
+          }
+        } catch (err) {
+          triggerNotice('Failed to parse question JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function restoreDefaults() {
+      sfx.playBlip(450);
+      sectorBank = JSON.parse(JSON.stringify(INITIAL_SECTORS));
+      localStorage.setItem('htpn_sterizap_questions_v5', JSON.stringify(sectorBank));
+      renderAdminList();
+      renderLevelDots();
+      loadSector(0);
+      triggerNotice('Restored factory HTPN defaults.');
+    }
+
+    // Auto-boot on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      if (PORTAL.embed) { document.getElementById('screen-launchpad').querySelectorAll('button[onclick="startGame()"]').forEach(b => b.disabled = true); window.parent.postMessage({ type: 'ipcgo-ready' }, '*'); }
+      else initGameData();
+    });
+  </script>
+</body>
+</html>
