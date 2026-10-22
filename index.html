@@ -5784,7 +5784,12 @@ function rkcProjKemas(){
   $('rkPBaru').innerHTML = s.baru.length ? s.baru.slice(0, 5).map(b => `<div class="rk-row" style="font-size:15px;font-weight:700"><span>${esc(b.nama)}</span><span style="color:#8fc1f2">${esc(b.jabatan)}</span></div>`).join('') : '<span style="color:#8fc1f2">Menunggu peserta pertama…</span>';
   const F = ['daftar','post','tutup'], i = F.indexOf(s.fasa);
   $('rkPFasa').innerHTML = ['1 · Daftar &amp; pre-test','2 · Post-test dibuka','3 · Sesi ditutup'].map((t, k) => `<span class="${k === i ? 'on' : k < i ? 'ok' : ''}">${t}</span>`).join('');
-  const b = $('rkPBtn'); b.textContent = s.fasa === 'daftar' ? 'Buka post-test' : s.fasa === 'post' ? 'Tutup sesi & keluarkan e-cert' : 'Sesi ditutup · e-cert dikeluarkan'; b.disabled = s.fasa === 'tutup'; b.className = 'rk-b ' + (s.fasa === 'tutup' ? 'g' : 'y'); b.dataset.sure = '';
+  const b = $('rkPBtn');
+  // Jangan ganggu butang yang sedang menunggu pengesahan (klik kedua) — kemas kini hanya bila fasa berubah
+  if (b.dataset.sure !== '1' || b.dataset.f !== s.fasa){
+    b.textContent = s.fasa === 'daftar' ? 'Buka post-test' : s.fasa === 'post' ? 'Tutup sesi & keluarkan e-cert' : 'Sesi ditutup · e-cert dikeluarkan';
+    b.disabled = s.fasa === 'tutup'; b.className = 'rk-b ' + (s.fasa === 'tutup' ? 'g' : 'y'); b.dataset.sure = ''; b.dataset.f = s.fasa;
+  }
   rkcProjDetik();
 }
 function rkcProjLukis(){
@@ -5804,7 +5809,10 @@ function rkcProjLukis(){
 }
 async function rkcProjFasa(btn){
   const s = RKC.proj.st, next = s.fasa === 'daftar' ? 'post' : 'tutup';
-  if (btn.dataset.sure !== '1'){ btn.dataset.sure = '1'; btn.textContent = next === 'post' ? 'Pasti buka post-test? (pre-test ditutup)' : 'Pasti tutup sesi? (daftar hadir ditutup)'; return; }
+  if (btn.dataset.sure !== '1'){ btn.dataset.sure = '1'; btn.dataset.f = s.fasa; btn.className = 'rk-b'; btn.style.background = '#e08a00';
+    btn.textContent = next === 'post' ? '✓ Tekan sekali lagi untuk buka post-test' : '✓ Tekan sekali lagi untuk tutup sesi';
+    clearTimeout(btn._t); btn._t = setTimeout(() => { if (btn.dataset.sure === '1'){ btn.dataset.sure = ''; btn.style.background = ''; btn.dataset.f = ''; rkcProjKemas(); } }, 10000); return; }
+  clearTimeout(btn._t); btn.style.background = '';
   busy(btn, true, '…');
   try { const d = await apiPost({ type:'coord_sesi_fasa', pin: STATE.coPin, sesi: s.sesi, fasa: next }); busy(btn, false); if (!d.ok) return toast(d.error);
     toast(next === 'post' ? '✓ Post-test dibuka' : `✓ Sesi ditutup · ${d.dijana} e-cert AJK/penceramah dijana`); await rkcProjStatus(); rkcMuat(); }
