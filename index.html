@@ -5876,7 +5876,7 @@ function rkcCsvDash(){ const d = RKC.dash; rkCsv('Kursus_UKI_' + d.tahun + '.csv
 
 // ----- Laporan Kursus (.docx) -----
 // Penjana Laporan Kursus UKI (.docx). Fungsi binaLaporan(d, docx) sama untuk Node dan browser (docx UMD).
-function binaLaporan(d, X) {
+function binaLaporanKursus(d, X) {
   const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ShadingType, VerticalAlign, LevelFormat, HeadingLevel, PageNumber, Footer } = X;
   const F = 'Arial', SZ = 22;
   const run = (t, o = {}) => new TextRun({ text: t, font: F, size: o.size || SZ, bold: o.bold, italics: o.italics, color: o.color });
@@ -5992,7 +5992,7 @@ function binaLaporan(d, X) {
 }
 
 // Rumusan & kesimpulan automatik daripada data
-function draftRumusan(d) {
+function draftRumusanKursus(d) {
   d.soalan.forEach((q) => { if (q.nPre == null) q.nPre = d.jumlahPeserta; if (q.nPost == null) q.nPost = d.jumlahPeserta; });
   const jum = (k) => d.soalan.reduce((a, q) => a + q[k], 0);
   const pc = (a, b) => b ? a / b * 100 : 0;
@@ -6025,7 +6025,7 @@ async function rkcLaporan(id, btn){
     const [r] = await Promise.all([apiPost({ type:'coord_laporan_kursus', pin: STATE.coPin, sesi: id }), muatSkrip(LIB.docx)]);
     if (!r.ok) throw new Error(r.error);
     const s = r.sesi, k = r.kursus, satu = s.hari.length === 1, ord = ['Pertama','Kedua','Ketiga','Keempat','Kelima'];
-    const d = draftRumusan({
+    const d = draftRumusanKursus({
       anjuran: 'Unit Kawalan Infeksi Hospital Tengku Permaisuri Norashikin Kajang', nama: k.nama || s.nama, pengenalan: k.pengenalan || '', kategori: 'Fungsional',
       tarikh: rkTarikhBM(s.hari), tempat: s.lokasi, objektif: k.objektif || [], jumlahPeserta: r.jumlahPeserta,
       pecahanHari: satu ? [] : r.pecahanHari.map((h, i) => `Hari ${ord[i] || i + 1} (${rkTarikhBM([{ t:h.t }])}): ${h.n} peserta`),
@@ -6034,7 +6034,7 @@ async function rkcLaporan(id, btn){
       aturcara: String(s.aturcara || '').split(/\n|;/).map(x => x.trim()).filter(Boolean),
       soalan: r.soalan, maklumBalas: r.maklumBalas, ulasan: r.ulasan.slice(0, 15), hadir: r.hadir, penyedia: {}, tarikhLaporan: ''
     });
-    const blob = await window.docx.Packer.toBlob(binaLaporan(d, window.docx));
+    const blob = await window.docx.Packer.toBlob(binaLaporanKursus(d, window.docx));
     await simpanFail('Laporan_' + (k.nama || s.nama).replace(/[^A-Za-z0-9]+/g, '_').slice(0, 50) + '_' + s.id + '.docx', blob);
   } catch(e){ toast('Gagal menjana laporan: ' + e.message); }
   finally { busy(btn, false); }
