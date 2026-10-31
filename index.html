@@ -1392,6 +1392,21 @@
   .rk-dash p{ margin:0; font-size:12.5px; color:var(--rk-m); font-weight:600; }
   .rk-dash .rk-btns{ display:flex; gap:8px; flex-wrap:wrap; }
   .rk-live{ display:inline-flex; align-items:center; gap:6px; margin-top:6px; font-size:12px; font-weight:800; color:#8a4b00; background:#fff4cc; border-radius:99px; padding:4px 10px; }
+  .ek-btns{ display:inline-flex; gap:6px; margin-left:auto; }
+  .jab-baru{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; align-items:center; }
+  .jab-baru input{ flex:1 1 200px; min-width:0; padding:8px 10px; border:1.5px solid #cfdbe6; border-radius:10px; font:inherit; font-size:13.5px; }
+  .jab-baru .jb-msg{ flex-basis:100%; font-size:12px; color:#b42318; font-weight:700; }
+  .jab-baru .jb-msg:empty{ display:none; }
+  .rk-kira{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; padding:8px 12px; border-radius:12px; background:var(--rk-gl); color:var(--rk-g); font-size:13px; font-weight:800; cursor:pointer; border:none; text-align:left; font-family:inherit; }
+  .rk-kira b{ font-size:22px; line-height:1; }
+  .rk-kira.kosong{ background:#eef2f6; color:#4a5b6d; }
+  .rk-kira small{ display:block; font-weight:700; opacity:.85; font-size:11.5px; }
+  .rk-imp{ display:flex; flex-direction:column; gap:6px; }
+  .rk-imp .rk-pick{ position:relative; }
+  .rk-imp .rk-pick input{ width:100%; padding:9px 10px; border:1.5px solid #cfe3e1; border-radius:10px; font:700 13.5px Nunito,sans-serif; }
+  .rk-imp-res{ position:absolute; left:0; right:0; top:100%; z-index:5; background:#fff; border:1px solid #cfe3e1; border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,.08); max-height:260px; overflow:auto; }
+  .rk-imp-res button{ display:block; width:100%; text-align:left; border:none; background:none; padding:8px 10px; font:800 13px Nunito,sans-serif; color:#12324a; cursor:pointer; }
+  .rk-imp-res button:hover{ background:#eef8f6; } .rk-imp-res small{ display:block; font-weight:600; color:#5f7280; }
   .rk-live i{ width:8px; height:8px; border-radius:50%; background:#e08a00; animation:rkPulse 1.2s infinite; }
   @keyframes rkPulse{ 50%{ opacity:.25; } }
   .rk-b{ display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:0 16px; border-radius:12px; border:none; cursor:pointer; font:800 14px 'Nunito',sans-serif; background:var(--rk); color:#fff; text-decoration:none; }
@@ -1702,7 +1717,7 @@
       <!-- KURSUS IPC (Rekod Kursus) -->
       <div class="panel2 rk" id="pRk">
         <div class="rk-dash"><span class="bh-ic" aria-hidden="true">🎓</span>
-          <div class="grow"><h3>Kursus IPC Saya</h3><p>Daftar hadir kursus UKI, jawab pre/post-test &amp; muat turun e-cert.</p><span class="rk-live hidden" id="rkLive"><i></i>Kursus UKI sedang berjalan hari ini</span></div>
+          <div class="grow"><h3>Kursus IPC Saya</h3><p>Daftar hadir kursus UKI, jawab pre/post-test &amp; muat turun e-cert.</p><span class="rk-live hidden" id="rkLive"><i></i>Kursus UKI sedang berjalan hari ini</span><button type="button" class="rk-kira hidden" id="rkKira" onclick="bukaRk('rekod')"></button></div>
           <div class="rk-btns"><button class="rk-b" type="button" onclick="bukaRk('hadir')">📋 Daftar Hadir</button><button class="rk-b o" type="button" onclick="bukaRk('rekod')">📜 Rekod Kursus</button></div></div>
       </div>
 
@@ -2055,7 +2070,7 @@
         <section class="co-sec rk" id="sec-rk">
           <h3 class="co-h">🎓 Kursus &amp; Kehadiran</h3>
           <p class="co-p">Satu QR untuk semua kursus UKI. Staf daftar hadir dengan kod sesi, jawab pre/post-test dan maklum balas, kemudian e-cert dijana automatik. Laporan kursus boleh dijana terus dalam format Word.</p>
-          <div class="rk-tabs" role="tablist"><button type="button" data-rkc="sesi" class="on">Sesi kursus</button><button type="button" data-rkc="katalog">Katalog kursus</button><button type="button" data-rkc="dash">Dashboard</button></div>
+          <div class="rk-tabs" role="tablist"><button type="button" data-rkc="sesi" class="on">Sesi kursus</button><button type="button" data-rkc="katalog">Katalog kursus</button><button type="button" data-rkc="dash">Dashboard</button><button type="button" data-rkc="import">Padanan Import</button></div>
           <div id="rkCo"></div>
         </section>
 
@@ -2483,8 +2498,8 @@ function isiJabDaftar(){ const el = $('dJab'), v = el.value, ptd = STATE.kat ===
   } else {
     const j = ((STATE.config && STATE.config.jabatan) || []).filter(x => x !== jabPtdJS());
     $('dJabLbl').textContent = 'Jabatan / Unit';
-    el.innerHTML = '<option value="">— Pilih jabatan anda —</option>' + j.map(x => `<option>${esc(x)}</option>`).join('') + '<option value="TIDAK PASTI">Tidak pasti</option>';
-    $('dJabHint').innerHTML = 'Tidak pasti? Pilih <b>Tidak pasti</b> — UKI akan sahkan.';
+    el.innerHTML = '<option value="">— Pilih jabatan anda —</option>' + j.map(x => `<option>${esc(x)}</option>`).join('') + '<option value="BELUM ADA JABATAN">Belum ada jabatan (belum ditempatkan)</option><option value="TIDAK PASTI">Tidak pasti</option>';
+    $('dJabHint').innerHTML = 'Baru lapor diri dan belum ditempatkan? Pilih <b>Belum ada jabatan</b>. Anda tetap boleh mula latihan; UKI akan kemas kini jabatan kemudian.';
   }
   el.value = [...el.options].some(o => o.value === v) ? v : ''; kemasUnitLain(); }
 function kemasUnitLain(){ $('dUnitLain').classList.toggle('hidden', !(STATE.kat === 'bukan-klinikal' && isLain($('dJab').value))); }
@@ -2495,7 +2510,7 @@ $('btnDaftar').addEventListener('click', async () => {
   const body = { type:'daftar', nama: $('dNama').value.trim().toUpperCase(), ic: $('dIc').value.trim(), telefon: $('dTel').value.trim(), emel: $('dEmel').value.trim(), kategori: STATE.kat, status: STATE.status || 'baru', institusi: $('dInst').value.trim(), jabatan: ptd ? jabPtdJS() : pilih, unit };
   if (ptd && !pilih) return msg('daftarMsg', 'Sila pilih unit anda.', 'err');
   if (ptd && !unit) return msg('daftarMsg', 'Sila tulis nama unit anda.', 'err');
-  if (!body.jabatan) return msg('daftarMsg', 'Sila pilih jabatan / unit anda (atau "Tidak pasti").', 'err');
+  if (!body.jabatan) return msg('daftarMsg', 'Sila pilih jabatan / unit anda (atau "Belum ada jabatan").', 'err');
   if (body.status === 'attachment' && !body.institusi) return msg('daftarMsg', 'Sila isi institusi / universiti anda.', 'err');
   if (!body.nama) return msg('daftarMsg', 'Sila isi nama penuh.', 'err');
   if (!/^\d{12}$/.test(body.ic)) return msg('daftarMsg', 'No. K/P mesti 12 digit.', 'err');
@@ -4158,7 +4173,8 @@ function renderCoList(d){
       <div class="reg-main">
         <div class="reg-name"><span class="st-n" style="cursor:pointer" onclick="bukaStaf('${esc(s.id)}')" title="Lihat / kemas kini maklumat"><b>${esc(s.nama)}</b></span></div>
         <div class="reg-meta"><span class="pill ${s.status === 'Attachment' ? 'gold' : ''}">${esc(s.status || 'Baru')}</span> ${esc(s.kategori || '')}${s.institusi ? ' · ' + esc(s.institusi) : ''} · Daftar ${esc(s.tarikh)} · ${esc(s.id)}</div>
-        ${s.jabDicadang ? `<div class="reg-meta">🏥 Jabatan (isi oleh staf): <b>${esc(s.jabDicadang)}</b></div>` : ''}
+        ${/^belum ada jabatan$/i.test(s.jabDicadang) ? `<div class="reg-meta"><span class="pill gold">⏳ Belum ditempatkan</span> Staf baru lapor diri — biarkan di sini sehingga jabatan diketahui. Staf tetap boleh log masuk &amp; buat latihan.</div>`
+          : s.jabDicadang ? `<div class="reg-meta">🏥 Jabatan (isi oleh staf): <b>${esc(s.jabDicadang)}</b></div>` : ''}
         ${s.pendua ? `<div class="reg-meta" style="color:#b42318;font-weight:700">⚠ Mungkin daftar dua kali — sama dengan: ${esc(s.pendua)}</div>` : ''}
         <div class="reg-meta">📞 <span class="sel">${esc(s.telefon)}</span> · ✉️ <span class="sel">${esc(s.emel)}</span></div>
         <div class="reg-meta">🔑 ID log masuk: <b class="sel">${s.ic4 ? esc(s.ic4) : '—'}</b>${s.noKp ? ' · No. K/P: <span class="sel">' + esc(s.noKp) + '</span>' : ''} · <a href="#" onclick="event.preventDefault();bukaStaf('${esc(s.id)}')">✏️ Kemas kini</a></div>
@@ -4168,13 +4184,14 @@ function renderCoList(d){
         ${s.emel ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(s.emel)}?subject=${encodeURIComponent('Portal Latihan IPC HTPN — pengesahan jabatan')}&body=${encodeURIComponent(teks)}">✉️ Emel</a>` : ''}
       </div>
       <div class="reg-assign">
-        <select class="cJab" aria-label="Jabatan untuk ${esc(s.nama)}"><option value="">— Pilih jabatan —</option>${d.jabatan.map(j => `<option ${j === s.jabDicadang ? 'selected' : ''}>${esc(j)}</option>`).join('')}</select>
+        <select class="cJab" aria-label="Jabatan untuk ${esc(s.nama)}"><option value="">— Pilih jabatan —</option>${d.jabatan.map(j => `<option ${j === s.jabDicadang ? 'selected' : ''}>${esc(j)}</option>`).join('')}<option value="__baru">＋ Tambah jabatan baharu…</option></select>
         <button class="btn btn-primary btn-sm cGo">Masukkan</button>
       </div>
     </div>`; }).join('');
   $('coList').querySelectorAll('.reg').forEach(el => {
+    pasangJabBaru(el.querySelector('.cJab'));
     el.querySelector('.cGo').onclick = async (ev) => {
-      const jab = el.querySelector('.cJab').value; if (!jab) return toast('Pilih jabatan dahulu.');
+      const jab = el.querySelector('.cJab').value; if (!jab || jab === '__baru') return toast('Pilih jabatan dahulu.');
       const b = ev.currentTarget; busy(b, true, '…');
       try {
         const r = await apiPost({ type:'coord_pindah', pin: STATE.coPin, id: el.dataset.id, jabatan: jab });
@@ -4256,6 +4273,78 @@ function tapisStaf(list){
     return true;
   });
 }
+// ===== Muat turun Senarai Staf (PDF / Excel) ikut tapisan semasa =====
+// Berasingan sepenuhnya daripada Jana Laporan HOD (binaLaporan) dan Laporan Kursus (binaLaporanKursus).
+function ekSenaraiData(){
+  const E = CO.eks; if (!E || !E.list || !E.list.length) return null;
+  const teks = id => { const s = $(id); return s && s.selectedIndex >= 0 ? s.options[s.selectedIndex].text.trim() : ''; };
+  const status = teks('fSt'), jaw = STATE._cariGlobal ? '' : $('fJaw').value, cari = $('fQ').value.trim(), lblJaw = ($('fJawL') && $('fJawL').textContent.trim()) || 'Jawatan';
+  const banding = (a, b) => String(a || '').localeCompare(String(b || ''), 'ms');
+  const rows = E.list.slice().sort((a, b) => banding(a.jabatan, b.jabatan) || banding(a.wad, b.wad) || banding(a.nama, b.nama)).map(s => {
+    const bk = !wajibEpsaJS(s);
+    return { nama: String(s.nama || ''), jawatan: String(s.jawatan || s.jawatanStd || ''), jabatan: String(s.jabatan || ''), wad: String(s.wad || ''), bk,
+      m1: bk ? '-' : (s.m1 ? 'Lengkap' : 'Belum'), m2: bk ? '-' : (s.m2 ? 'Lengkap' : 'Belum'),
+      status: bk ? (s.kuiz ? 'Lulus Modul Latihan Khas' : 'Belum Modul Latihan Khas') : (s.m1 && s.m2 ? 'Lengkap wajib' : 'Belum ' + belumTeks(s)) };
+  });
+  const semuaBk = rows.every(r => r.bk);
+  const tapis = [E.jab, status, jaw ? lblJaw + ': ' + jaw : 'Semua jawatan', cari ? 'Carian: "' + cari + '"' : ''].filter(Boolean);
+  const head = semuaBk ? ['Bil', 'Nama', 'Jawatan', 'Unit', 'Modul Latihan Khas', 'Catatan / Tindakan'] : ['Bil', 'Nama', 'Jawatan', 'Jabatan', 'Wad / Unit', 'EPSA Modul 1', 'EPSA Modul 2', 'Status', 'Catatan / Tindakan'];
+  const baris = (r, i) => semuaBk ? [i + 1, r.nama, r.jawatan, r.wad, r.status.replace(' Modul Latihan Khas', ''), ''] : [i + 1, r.nama, r.jawatan, r.jabatan, r.wad, r.m1, r.m2, r.status, ''];
+  const kiraJab = {}; rows.forEach(r => { const k = r.jabatan || '(Tiada jabatan)'; kiraJab[k] = (kiraJab[k] || 0) + 1; });
+  const hari = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  const fail = ('Senarai_Staf_' + [status, jaw, E.jab].filter(Boolean).join('_')).replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 100) + '_' + hari;
+  return { rows, semuaBk, tapis, head, baris, kiraJab, fail, tajuk: 'Senarai Staf: ' + status,
+    tarikh: new Date().toLocaleDateString('ms-MY', { day:'numeric', month:'long', year:'numeric' }) };
+}
+async function ekSenaraiPdf(btn){
+  const D = ekSenaraiData(); if (!D) return toast('Tiada staf untuk dimuat turun.');
+  busy(btn, true, 'Menjana…');
+  try {
+    await muatSkrip(LIB.jspdf); await muatSkrip(LIB.autotable);
+    const { jsPDF } = window.jspdf, doc = new jsPDF({ unit:'mm', format:'a4', orientation:'landscape' }), W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.text(D.tajuk, 14, 15);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(70);
+    doc.text('Unit Kawalan Infeksi, Hospital Tengku Permaisuri Norashikin, Kajang', 14, 21);
+    const info = doc.splitTextToSize('Tapisan: ' + D.tapis.join(' | ') + '     Jumlah: ' + D.rows.length + ' staf     Dijana: ' + D.tarikh, W - 28);
+    doc.text(info, 14, 26); doc.setTextColor(0);
+    const nCol = D.head.length, banyakJab = Object.keys(D.kiraJab).length > 1, body = [];
+    let jabNow = null;
+    D.rows.forEach((r, i) => {
+      const j = r.jabatan || '(Tiada jabatan)';
+      if (banyakJab && j !== jabNow){ jabNow = j; body.push([{ content: j + '  (' + D.kiraJab[j] + ' staf)', colSpan: nCol, styles: { fillColor: [230, 241, 253], fontStyle: 'bold', textColor: [18, 50, 74], halign: 'left' } }]); }
+      body.push(D.baris(r, i));
+    });
+    doc.autoTable({ startY: 26 + info.length * 4.5 + 2, head: [D.head], body, theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle', lineColor: [205, 214, 224], lineWidth: 0.15 }, headStyles: { fillColor: [21, 118, 209], textColor: 255 },
+      columnStyles: D.semuaBk ? { 0: { cellWidth: 10, halign: 'center' }, 4: { cellWidth: 30 }, 5: { cellWidth: 60 } }
+        : { 0: { cellWidth: 10, halign: 'center' }, 5: { cellWidth: 19, halign: 'center' }, 6: { cellWidth: 19, halign: 'center' }, 7: { cellWidth: 36 }, 8: { cellWidth: 44 } },
+      didParseCell: c => { if (c.section !== 'body') return; const v = String(c.cell.raw == null ? '' : c.cell.raw);
+        if (v === 'Belum' || /^Belum /.test(v)) c.cell.styles.textColor = [180, 35, 24]; else if (v === 'Lengkap' || v === 'Lengkap wajib' || v === 'Lulus') c.cell.styles.textColor = [16, 122, 72]; },
+      didDrawPage: () => { doc.setFontSize(8); doc.setTextColor(120); doc.text('Portal Latihan Kawalan Infeksi HTPN  ·  halaman ' + doc.internal.getNumberOfPages(), 14, H - 6); doc.setTextColor(0); } });
+    await simpanFail(D.fail + '.pdf', doc.output('blob'));
+  } catch(e){ toast('Gagal menjana PDF: ' + e.message); }
+  finally { busy(btn, false); }
+}
+async function ekSenaraiXlsx(btn){
+  const D = ekSenaraiData(); if (!D) return toast('Tiada staf untuk dimuat turun.');
+  busy(btn, true, 'Menjana…');
+  try {
+    await muatSkrip(LIB.xlsx);
+    const X = window.XLSX, nCol = D.head.length;
+    const aoa = [[D.tajuk], ['Unit Kawalan Infeksi, Hospital Tengku Permaisuri Norashikin, Kajang'], ['Tapisan: ' + D.tapis.join(' | ')], ['Jumlah: ' + D.rows.length + ' staf · Dijana: ' + D.tarikh], [], D.head]
+      .concat(D.rows.map(D.baris));
+    const ws = X.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = (D.semuaBk ? [5, 40, 30, 30, 18, 35] : [5, 40, 30, 26, 22, 13, 13, 24, 35]).map(w => ({ wch: w }));
+    ws['!merges'] = [0, 1, 2, 3].map(r => ({ s: { r, c: 0 }, e: { r, c: nCol - 1 } }));
+    ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 5, c: 0 }, e: { r: 5 + D.rows.length, c: nCol - 1 } }) };
+    const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Senarai');
+    const ring = [['Jabatan', 'Bilangan staf dalam senarai']].concat(Object.keys(D.kiraJab).sort().map(j => [j, D.kiraJab[j]])).concat([['JUMLAH', D.rows.length]]);
+    const ws2 = X.utils.aoa_to_sheet(ring); ws2['!cols'] = [{ wch: 40 }, { wch: 26 }]; X.utils.book_append_sheet(wb, ws2, 'Ringkasan ikut jabatan');
+    const out = X.write(wb, { bookType: 'xlsx', type: 'array' });
+    await simpanFail(D.fail + '.xlsx', new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  } catch(e){ toast('Gagal menjana Excel: ' + e.message); }
+  finally { busy(btn, false); }
+}
 function wajibEpsaJS(x){ return x.kategori !== 'Bukan Klinikal'; }
 function kunciNamaJS(s){ return String(s || '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\b(BIN|BINTI|BT|BTE|A P|A L)\b/g, ' ').replace(/\s+/g, ' ').trim(); }
 async function loadStaf(){
@@ -4295,6 +4384,8 @@ function renderStaf(){
   if (!N && nBK){ const bb = list.filter(s => !s.kuiz);
     const grpBK = `Peringatan daripada Unit Kawalan Infeksi (UKI) HTPN — ${jabLbl}:\nStaf berikut belum lengkap Modul Latihan Khas Kawalan Infeksi (WAJIB). Sila log masuk Portal Latihan IPC HTPN (pilih Staf Pentadbiran HTPN), tonton video & jawab kuiz untuk dapatkan e-sijil: ${pautanPortal()}\n\n` + bb.slice(0, 80).map((s, i) => `${i + 1}. ${s.nama}${s.wad ? ' (' + s.wad + ')' : ''}`).join('\n') + (bb.length > 80 ? `\n…dan ${bb.length - 80} lagi` : '');
     $('bulkBar').innerHTML = `<span><b>${list.length}</b> staf dipaparkan${bb.length ? ` · <b style="color:var(--coral)">${bb.length}</b> belum lulus` : ''}</span>` + (bb.length ? `<a class="btn btn-wa btn-sm" href="${waLink('', grpBK)}" target="_blank" rel="noopener" title="Pilih group WhatsApp selepas dibuka">💬 Peringatan ke group WhatsApp</a>` : ''); }
+  CO.eks = { list, jab: (STATE._cariGlobal || $('fJab').value === 'SEMUA') ? 'Semua jabatan' : $('fJab').value };
+  if (list.length) $('bulkBar').insertAdjacentHTML('beforeend', `<span class="ek-btns"><button class="btn btn-ghost btn-sm" type="button" onclick="ekSenaraiPdf(this)" title="Muat turun senarai seperti yang ditapis (PDF)">⬇ PDF</button><button class="btn btn-ghost btn-sm" type="button" onclick="ekSenaraiXlsx(this)" title="Muat turun senarai seperti yang ditapis (Excel)">⬇ Excel</button></span>`);
   if (!list.length){ $('stafList').innerHTML = '<p class="muted-note" style="padding:12px 0;">Tiada staf untuk tapisan ini.</p>'; $('bMore').classList.add('hidden'); return; }
   $('stafList').innerHTML = `<div class="st-row st-head"><span>${!N && nBK ? 'Nama / Jawatan · Unit' : 'Nama / Jawatan'}</span>${!N && nBK ? '<span style="grid-column:span 2">Modul Khas</span>' : '<span>M1</span><span>M2</span>'}<span>Lencana</span><span>Hubungi</span></div>` +
     list.slice(0, CO.shown).map(s => { const bk = !wajibEpsaJS(s), ok = bk ? !!s.kuiz : s.m1 && s.m2;
@@ -4324,7 +4415,8 @@ $('bMore').onclick = () => { CO.shown += 100; renderStaf(); };
 const LIB = {
   jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   autotable: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
-  docx: 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js'
+  docx: 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js',
+  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 };
 const loaded = {};
 function muatSkrip(src){ return loaded[src] || (loaded[src] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => { delete loaded[src]; rej(new Error('Gagal muat ' + src)); }; document.head.appendChild(s); })); }
@@ -4913,7 +5005,7 @@ function bukaTambahStaf(){
   $('sfBody').innerHTML = `<div class="sf-h">Tambah staf ke senarai</div>
     <div class="sf-sub">Staf yang ditambah boleh terus log masuk dengan nama penuh + 4 digit akhir No. K/P.</div>
     <div class="sf-grid">
-      <div class="wide"><label>Jabatan</label><select id="tsJab" ${li ? 'disabled' : ''}>${li ? '' : '<option value="">— Pilih jabatan —</option>'}${jabOpt}</select></div>
+      <div class="wide"><label>Jabatan</label><select id="tsJab" ${li ? 'disabled' : ''}>${li ? '' : '<option value="">— Pilih jabatan —</option>'}${jabOpt}${li ? '' : '<option value="__baru">＋ Tambah jabatan baharu…</option>'}</select></div>
       <div class="wide"><label>Nama penuh (seperti dalam IC)</label><input id="tsNama" class="upper" placeholder="CTH: SITI AMINAH BINTI ABDULLAH"></div>
       <div><label>No. Kad Pengenalan <small>(pilihan)</small></label><input id="tsKp" inputmode="numeric" maxlength="12" placeholder="12 digit tanpa sengkang"></div>
       <div><label>Jawatan</label><input id="tsJaw" placeholder="cth: Pembantu Tadbir"></div>
@@ -4930,7 +5022,7 @@ function bukaTambahStaf(){
   const kemas = () => { const ptd = $('tsJab').value === jabPtdJS();
     $('tsUnit').classList.toggle('hidden', !ptd); $('tsUnitL').textContent = ptd ? 'Unit' : 'Wad / Unit (pilihan)';
     $('tsUnitLain').classList.toggle('hidden', ptd && !isLain($('tsUnit').value)); $('tsUnitLain').placeholder = ptd ? 'Nyatakan unit' : 'cth: Wad 5A'; };
-  $('tsJab').onchange = kemas; $('tsUnit').onchange = kemas; kemas(); upperInput($('tsNama'));
+  $('tsJab').onchange = kemas; $('tsUnit').onchange = kemas; kemas(); upperInput($('tsNama')); if (!li) pasangJabBaru($('tsJab'), kemas);
   ['tsKp','tsTel'].forEach(id => $(id).addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, '')));
   $('bTsSatu').onclick = () => { const ptd = $('tsJab').value === jabPtdJS();
     const unit = ptd ? nilaiUnit($('tsUnit').value, $('tsUnitLain').value) : $('tsUnitLain').value.trim();
@@ -4946,7 +5038,7 @@ function bukaTambahStaf(){
     hantarTambah(L, $('bTsPukal'), false); };
 }
 async function hantarTambah(senarai, btn, satu){
-  const jab = $('tsJab').value; if (!jab) return msg('tsMsg', 'Sila pilih jabatan.', 'err');
+  const jab = $('tsJab').value; if (!jab || jab === '__baru') return msg('tsMsg', 'Sila pilih jabatan.', 'err');
   busy(btn, true, 'Menyimpan…'); msg('tsMsg', '');
   try { const d = await apiPost({ type:'coord_staf_tambah', pin: STATE.coPin, jabatan: jab, senarai });
     if (!d.ok) return msg('tsMsg', esc(d.error), 'err');
@@ -4956,6 +5048,31 @@ async function hantarTambah(senarai, btn, satu){
       + (unitBaru.length ? `<p class="muted-note" style="margin-top:8px">ℹ️ ${unitBaru.length} staf guna unit yang tiada dalam senarai. Tambah unit itu dalam tab <b>Unit_Pentadbiran</b> jika ia unit rasmi.</p>` : '');
     if (d.ditambah){ if (satu) ['tsNama','tsKp','tsJaw','tsTel','tsUnitLain'].forEach(i => $(i).value = ''); else $('tsPukal').value = ''; segarSenarai(); }
   } catch(e){ msg('tsMsg', '⚠ Gagal sambung ke pelayan.', 'err'); } finally { busy(btn, false); }
+}
+// ----- Tambah jabatan baharu (UKI) terus dari senarai pilihan jabatan -----
+function pasangJabBaru(sel, selepas){
+  if (!sel) return; let lama = sel.value === '__baru' ? '' : sel.value;
+  sel.addEventListener('change', () => {
+    if (sel.value !== '__baru'){ lama = sel.value; const w = sel.nextElementSibling; if (w && w.classList.contains('jab-baru')) w.remove(); return; }
+    sel.value = lama; if (sel.nextElementSibling && sel.nextElementSibling.classList.contains('jab-baru')) return sel.nextElementSibling.querySelector('input').focus();
+    const w = document.createElement('div'); w.className = 'jab-baru';
+    w.innerHTML = `<input type="text" maxlength="80" placeholder="Nama jabatan baharu, cth: Jabatan Onkologi" aria-label="Nama jabatan baharu"><button type="button" class="btn btn-primary btn-sm">Simpan</button><button type="button" class="btn btn-ghost btn-sm">Batal</button><div class="jb-msg"></div>`;
+    sel.after(w); const inp = w.querySelector('input'), [bS, bB] = w.querySelectorAll('button'); inp.focus();
+    bB.onclick = () => w.remove();
+    inp.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); bS.click(); } };
+    bS.onclick = async () => {
+      const nama = inp.value.replace(/\s+/g, ' ').trim(); if (nama.length < 2){ w.querySelector('.jb-msg').textContent = 'Sila tulis nama jabatan.'; return; }
+      busy(bS, true, '…');
+      try { const d = await apiPost({ type:'coord_jabatan_tambah', pin: STATE.coPin, nama });
+        const pilih = d.ok ? d.nama : d.ada;
+        if (!d.ok && !d.ada){ w.querySelector('.jb-msg').textContent = d.error || 'Gagal menambah jabatan.'; busy(bS, false); return; }
+        if (d.ok){ CO.jabatan = d.jabatan; if (STATE.config) STATE.config.jabatan = d.jabatan.slice(); }
+        document.querySelectorAll('select.cJab, #tsJab, #fJab').forEach(s => { if (![...s.options].some(o => o.value === pilih)){ const o = new Option(pilih, pilih), b = [...s.options].find(o => o.value === '__baru'); s.insertBefore(o, b || null); } });
+        sel.value = pilih; lama = pilih; w.remove(); toast(d.ok ? '✓ Jabatan "' + pilih + '" ditambah.' : 'ℹ️ ' + d.error + ' Dipilih.');
+        if (selepas) selepas();
+      } catch(e){ w.querySelector('.jb-msg').textContent = '⚠ Gagal sambung ke pelayan.'; busy(bS, false); }
+    };
+  });
 }
 function senaraiJab(){ return (CO.jabatan && CO.jabatan.length ? CO.jabatan : (STATE.config && STATE.config.jabatan) || []); }
 function lukisStaf(){
@@ -5253,8 +5370,21 @@ async function rkSemakDash(){
     RKS.aktif = d; const ada = d.sesi.some(s => !(s.saya && s.saya.sijil)); $('rkLive').classList.toggle('hidden', !ada);
   } catch(e){}
 }
+async function rkKiraDash(){
+  const p = STATE.profil; if (!p || !$('rkKira')) return;
+  try { const d = await apiPost({ type:'rekod_kursus', id:p.id }); if (!d.ok || !STATE.profil || STATE.profil.id !== p.id) return; RKS.rekod = d.rekod; rkLukisKira(); } catch(e){}
+}
+function rkLukisKira(){
+  const el = $('rkKira'); if (!el) return;
+  const thn = String(new Date().getFullYear()), L = (RKS.rekod || []).filter(x => x.jenis === 'Peserta' && ((x.hariHadir || x.hari)[0] || {}).t && (x.hariHadir || x.hari)[0].t.startsWith(thn));
+  const nama = L.slice(0, 3).map(x => x.nama).join(' · ') + (L.length > 3 ? ` · +${L.length - 3} lagi` : '');
+  el.classList.toggle('kosong', !L.length);
+  el.innerHTML = L.length ? `<b>${L.length}</b><span>kursus anjuran UKI dihadiri pada ${thn}<small>${esc(nama)}</small></span>`
+    : `<span>Belum ada kursus anjuran UKI direkod pada ${thn}<small>Kursus yang anda hadiri akan dipaparkan di sini.</small></span>`;
+  el.classList.remove('hidden');
+}
 function rkSelepasLogin(){
-  setTimeout(rkSemakDash, 600);
+  setTimeout(rkSemakDash, 600); setTimeout(rkKiraDash, 900);
   let tunda = false; try { tunda = sessionStorage.getItem('rkHadir') === '1'; if (tunda) sessionStorage.removeItem('rkHadir'); } catch(e){}
   if (tunda) setTimeout(() => bukaRk('hadir'), 50);
 }
@@ -5404,7 +5534,7 @@ async function rkMbSeterus(btn){
 async function rkMuatRekod(){
   const body = $('rkBody');
   if (!RKS.rekod) body.innerHTML = '<div class="rk-card"><span class="spinner dark"></span> Memuatkan rekod…</div>'; else rkLukisRekod();
-  try { const d = await apiPost({ type:'rekod_kursus', id: STATE.profil.id }); if (d.ok){ RKS.rekod = d.rekod; if (RKS.tab === 'rekod') rkLukisRekod(); } }
+  try { const d = await apiPost({ type:'rekod_kursus', id: STATE.profil.id }); if (d.ok){ RKS.rekod = d.rekod; rkLukisKira(); if (RKS.tab === 'rekod') rkLukisRekod(); } }
   catch(e){ if (!RKS.rekod) body.innerHTML = '<div class="rk-card"><div class="msg err">⚠ Tidak dapat sambung ke pelayan.</div></div>'; }
 }
 function rkSenaraiRekod(){
@@ -5422,9 +5552,12 @@ function rkLukisRekod(){
   L.forEach(x => {
     const y = ((x.hari[0] || {}).t || '').slice(0, 4);
     if (y !== yr){ yr = y; html += `<p class="rk-yr">${esc(y || '—')}</p>`; }
-    const tarikh = rkTarikhBM(x.hari) + (x.lokasi ? ' · ' + x.lokasi : '') + (x.jam ? ' · ' + x.jam + ' jam' : '');
+    const tarikh = rkTarikhBM(x.hariHadir || x.hari) + (x.lokasi ? ' · ' + x.lokasi : '') + (x.jam ? ' · ' + x.jam + ' jam' : '');
     let chip = '', bawah = '';
-    if (x.jenis === 'Peserta'){
+    if (x.jenis === 'Peserta' && x.import){
+      chip = '<span class="rk-chip g">HADIR</span>';
+      bawah = '<p class="rk-meta" style="margin:8px 0 0">📋 Daripada senarai kehadiran UKI. Sijil asal telah dihantar melalui emel.</p>';
+    } else if (x.jenis === 'Peserta'){
       chip = x.sijil ? '<span class="rk-chip g">HADIR</span>' : '<span class="rk-chip y">BELUM LENGKAP</span>';
       bawah = `<div class="rk-row" style="margin-top:10px"><div class="rk-pp">${x.pre != null ? `<span>Pre ${x.pre}%</span>` : '<span>Pre —</span>'}<span aria-hidden="true">→</span>${x.post != null ? `<span class="g">Post ${x.post}%</span>` : '<span>Post —</span>'}</div>
         ${x.sijil ? `<button class="rk-b y sm" type="button" onclick="rkMuatTurunSijil('${esc(x.sijil)}', this)">e-Cert</button>` : x.fasa !== 'tutup' || !x.mb ? `<button class="rk-b o sm" type="button" onclick="RKS.tab='hadir';rkTabUI();rkMuat()">Sambung</button>` : ''}</div>`;
@@ -5449,8 +5582,8 @@ async function rkTranskrip(btn){
     [['Nama', p.nama], ['ID Staf', p.id], ['Jabatan / Unit', [p.jabatan, p.unit].filter(Boolean).join(' · ') || '-'], ['Jawatan', p.jawatan || '-'], ['Tarikh dijana', new Date().toLocaleDateString('ms-MY')]]
       .forEach((r, i) => { doc.setFont('helvetica', 'bold'); doc.text(r[0], 14, 40 + i * 6); doc.setFont('helvetica', 'normal'); doc.text(': ' + r[1], 44, 40 + i * 6); });
     doc.autoTable({ startY: 72, head:[['Bil', 'Kursus / Program', 'Tarikh', 'Peranan', 'Jam', 'Pre -> Post', 'No. Sijil']],
-      body: L.map((x, i) => [i + 1, x.nama, rkTarikhBM(x.hari), x.jenis === 'Peserta' ? 'Peserta' : x.jenis === 'AJK' ? 'AJK (' + (x.peranan || '') + ')' : x.jenis === 'Penceramah' ? 'Penceramah' : 'Peserta',
-        x.jam || '', x.jenis === 'Peserta' ? (x.pre != null ? x.pre + '%' : '-') + ' -> ' + (x.post != null ? x.post + '%' : '-') : '', x.sijil || '']),
+      body: L.map((x, i) => [i + 1, x.nama, rkTarikhBM(x.hariHadir || x.hari), x.jenis === 'Peserta' ? 'Peserta' : x.jenis === 'AJK' ? 'AJK (' + (x.peranan || '') + ')' : x.jenis === 'Penceramah' ? 'Penceramah' : 'Peserta',
+        x.jam || '', x.jenis === 'Peserta' && !x.import ? (x.pre != null ? x.pre + '%' : '-') + ' -> ' + (x.post != null ? x.post + '%' : '-') : '', x.sijil || '']),
       styles:{ fontSize:8.5, cellPadding:2 }, headStyles:{ fillColor:[21,118,209] }, columnStyles:{ 0:{ cellWidth:9 }, 4:{ cellWidth:10 } } });
     const y = doc.lastAutoTable.finalY + 8, jam = L.reduce((a, x) => a + (x.jam || 0), 0);
     doc.setFontSize(10); doc.text(`Jumlah: ${L.filter(x => x.jenis === 'Peserta').length} kursus dihadiri, ${jam} jam latihan`, 14, y);
@@ -5580,7 +5713,7 @@ else if (rkQ.has('hadir')) setTimeout(() => toast('Log masuk untuk daftar hadir 
 
 // ===================== PANEL UKI: KURSUS & KEHADIRAN =====================
 const RKC = { tab:'sesi', data:null, dash:null, tahun:String(new Date().getFullYear()), proj:null };
-document.querySelectorAll('[data-rkc]').forEach(b => b.addEventListener('click', () => { RKC.tab = b.dataset.rkc; rkcTabUI(); rkcLukis(); if (RKC.tab === 'dash') rkcMuatDash(); }));
+document.querySelectorAll('[data-rkc]').forEach(b => b.addEventListener('click', () => { RKC.tab = b.dataset.rkc; rkcTabUI(); rkcLukis(); if (RKC.tab === 'dash') rkcMuatDash(); if (RKC.tab === 'import') rkcMuatImport(); }));
 function rkcTabUI(){ document.querySelectorAll('[data-rkc]').forEach(b => b.classList.toggle('on', b.dataset.rkc === RKC.tab)); }
 async function rkcMuat(){
   if (!RKC.data) $('rkCo').innerHTML = '<span class="spinner dark"></span>';
@@ -5589,6 +5722,7 @@ async function rkcMuat(){
 }
 function rkcLukis(){
   if (RKC.tab === 'dash') return rkcLukisDash();
+  if (RKC.tab === 'import') return rkcLukisImport();
   const D = RKC.data; if (!D) return;
   if (RKC.tab === 'katalog'){
     $('rkCo').innerHTML = `<div class="rk-row" style="margin-bottom:10px"><p class="co-p" style="margin:0">Maklumat kursus diisi sekali dan digunakan semula untuk setiap sesi, laporan dan e-cert.</p><button class="rk-b" type="button" onclick="rkcEdKatalog()">＋ Kursus baharu</button></div>` +
@@ -5687,6 +5821,51 @@ function rkcSesiDariUI(){
   document.querySelectorAll('[data-rkp]').forEach((el, i) => { const p = S.penceramah[i]; if (!p) return; p.tajuk = el.querySelector('.tj').value;
     if (p.jenis === 'luar'){ p.nama = el.querySelector('.nm').value; p.institusi = el.querySelector('.in').value; p.emel = el.querySelector('.em').value; } });
   document.querySelectorAll('[data-rka]').forEach((el, i) => { const a = S.ajk[i]; if (a) a.peranan = el.querySelector('.pr').value; });
+}
+// ---------- Padanan rekod kehadiran yang diimport ----------
+async function rkcMuatImport(){
+  if (!RKC.imp) $('rkCo').innerHTML = '<span class="spinner dark"></span>';
+  try { const d = await apiPost({ type:'coord_import_senarai', pin: STATE.coPin }); if (!d.ok) return $('rkCo').innerHTML = `<div class="msg err">${esc(d.error)}</div>`; RKC.imp = d; if (RKC.tab === 'import') rkcLukisImport(); }
+  catch(e){ $('rkCo').innerHTML = '<div class="msg err">⚠ Tidak dapat sambung ke pelayan.</div>'; }
+}
+function rkcLukisImport(){
+  const D = RKC.imp; if (!D) return;
+  const q = (RKC.impQ || '').toUpperCase(), L = D.belum.filter(x => !q || (x.nama + ' ' + x.jabatan + ' ' + x.kursus).toUpperCase().indexOf(q) >= 0);
+  let h = `<p class="co-p" style="margin:0 0 10px">Rekod kehadiran kursus UKI yang diimport daripada borang lama. Nama yang <b>tidak sama tepat</b> dengan senarai staf perlu dipautkan secara manual. Staf yang log masuk dengan nama sama akan dipautkan sendiri.</p>
+    <div class="rk-tiles"><div class="rk-tile"><b>${D.jumlah}</b><span>rekod import</span></div><div class="rk-tile"><b>${D.dipadan}</b><span>dipadankan</span></div><div class="rk-tile"><b>${D.belum.length}</b><span>belum dipadankan</span></div></div>`;
+  if (!D.jumlah){ $('rkCo').innerHTML = h + '<div class="rk-card"><h4>Belum ada rekod import</h4><p class="rk-meta">Import tab <b>Import_Kehadiran</b> dalam Google Sheet, kemudian jalankan menu <b>📥 Import kehadiran kursus UKI</b>.</p></div>'; return; }
+  h += `<div class="rk-row" style="margin:10px 0"><input type="search" placeholder="Tapis nama / jabatan / kursus…" value="${esc(RKC.impQ || '')}" oninput="RKC.impQ=this.value;clearTimeout(RKC.impT);RKC.impT=setTimeout(()=>{rkcLukisImport();const i=document.getElementById('rkImpQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},250)" id="rkImpQ" style="flex:1;min-width:180px;padding:9px 10px;border:1.5px solid #cfe3e1;border-radius:10px;font:700 13.5px Nunito,sans-serif">
+    <button class="rk-b o" type="button" onclick="rkcImportPadan(this)">🔄 Padankan semula automatik</button></div>`;
+  if (!D.belum.length) h += '<div class="rk-card"><h4>✅ Semua rekod telah dipadankan</h4></div>';
+  h += L.map(x => `<div class="rk-card rk-imp"><div class="rk-row" style="align-items:flex-start"><div style="min-width:0;flex:1"><h4>${esc(x.nama)}</h4><p class="rk-meta" style="margin:0">${esc([x.jawatan, x.jabatan].filter(Boolean).join(' · ') || '—')}</p><p class="rk-meta" style="margin:2px 0 0">🎓 ${esc(x.kursus)}${x.tarikh ? ' · ' + esc(rkTarikhRingkas(x.tarikh)) : ''}</p></div><span class="rk-chip y">BELUM DIPADANKAN</span></div>
+    <div class="rk-pick"><input type="text" placeholder="Cari staf untuk dipautkan (min 3 huruf)…" aria-label="Cari staf untuk ${esc(x.nama)}" autocomplete="off" oninput="rkcImpCari(this, ${x.i})"><div class="rk-imp-res hidden"></div></div></div>`).join('');
+  $('rkCo').innerHTML = h;
+}
+let rkImpT = null;
+function rkcImpCari(inp, i){
+  clearTimeout(rkImpT); const box = inp.nextElementSibling, q = inp.value.trim();
+  if (q.length < 3){ box.classList.add('hidden'); return; }
+  rkImpT = setTimeout(async () => {
+    try { const d = await apiPost({ type:'coord_cari', pin: STATE.coPin, q }); const H = (d.hasil || []).slice(0, 8);
+      box.innerHTML = H.length ? H.map(h => `<button type="button" data-id="${esc(h.id)}">${esc(h.nama)}<small>${esc(h.jabatan)} · ${esc(h.id)}</small></button>`).join('') : '<button type="button" disabled>Tiada padanan</button>';
+      box.classList.remove('hidden');
+      box.querySelectorAll('[data-id]').forEach(b => b.onclick = () => rkcImpPaut(i, b.dataset.id, b));
+    } catch(e){}
+  }, 300);
+}
+async function rkcImpPaut(i, idStaf, btn){
+  const x = (RKC.imp.belum || []).find(y => y.i === i); if (!x) return;
+  btn.disabled = true;
+  try { const d = await apiPost({ type:'coord_import_paut', pin: STATE.coPin, i, nama: x.nama, idStaf });
+    if (!d.ok){ toast(d.error || 'Gagal memautkan.'); btn.disabled = false; return; }
+    RKC.imp.belum = RKC.imp.belum.filter(y => y.i !== i); RKC.imp.dipadan++; toast('✅ ' + x.nama + ' dipautkan.'); rkcLukisImport(); RKC.dash = null;
+  } catch(e){ toast('⚠ Tidak dapat sambung ke pelayan.'); btn.disabled = false; }
+}
+async function rkcImportPadan(btn){
+  busy(btn, true, 'Memadankan…');
+  try { const d = await apiPost({ type:'coord_import_padan', pin: STATE.coPin }); if (!d.ok) toast(d.error || 'Gagal.'); else { toast(d.dipadan ? `✅ ${d.dipadan} rekod dipadankan.` : 'Tiada padanan baharu.'); RKC.dash = null; await rkcMuatImport(); } }
+  catch(e){ toast('⚠ Tidak dapat sambung ke pelayan.'); }
+  finally { busy(btn, false); }
 }
 function rkcPemilihStaf(kunci){
   return `<div class="rk-pick"><input type="text" placeholder="Taip nama staf (min 3 huruf)…" aria-label="Cari staf" oninput="rkcCariStaf(this, '${kunci}')" autocomplete="off" style="width:100%;padding:9px 10px;border:1.5px solid #cfe3e1;border-radius:10px;font:700 13.5px Nunito,sans-serif"><div class="rk-sug hidden"></div></div>`;
